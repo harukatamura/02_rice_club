@@ -168,6 +168,7 @@
 	if(strpos($charset,'UTF-8') === false && strpos($charset,'utf-8') === false){
 		$body = mb_convert_encoding($body, "UTF-8", "iso-2022-jp,Shift_JIS");
 	}
+	$comm->ouputlog("body：".$body, $prgid, SYS_LOG_TYPE_INFO);
 	//日付
 	$start_buf="Date: ";
 	$end_buf="+";
@@ -356,19 +357,20 @@
 			$weight = html_cut_syutoku($body, $start_buf, $end_buf,0);
 			$weight = trim($weight);
 			$weight = mb_convert_kana($weight, 'n');
-			$start_buf="■お届け希望時間帯";
-			$end_buf="■";
-			$g_time = html_cut_syutoku($body, $start_buf, $end_buf,0);
-			$g_time = trim($g_time);
-			if($g_time = ""){
+			$start_buf="■連絡事項など";
+			$end_buf="[フォーム情報]";
+			$remarks = html_cut_syutoku($body, $start_buf, $end_buf,0);
+			if($remarks == ""){
 				$start_buf="■お届け希望時間帯";
 				$end_buf="[フォーム情報]";
 				$g_time = html_cut_syutoku($body, $start_buf, $end_buf,0);
 				$g_time = trim($g_time);
+			}else{
+				$start_buf="■お届け希望時間帯";
+				$end_buf="■";
+				$g_time = html_cut_syutoku($body, $start_buf, $end_buf,0);
+				$g_time = trim($g_time);
 			}
-			$start_buf="■連絡事項など";
-			$end_buf="[フォーム情報]";
-			$remarks = html_cut_syutoku($body, $start_buf, $end_buf,0);
 			//開始日取得　15日まで→当月開始、16日以降→翌月開始
 			if(date('j',strtotime($today)) < 16){
 				//当月の26日
