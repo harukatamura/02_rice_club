@@ -183,7 +183,7 @@
 	line-height: 130%;
 	}
 	th.tbd_th_p2 {
-	width: 300px;
+	width: 200px;
 	padding: 10px 8px; /* 見出しセルのパディング（上下、左右） */
 	color: white;
 	background-color: #2B8225; /* 見出しセルの背景色 */
@@ -542,14 +542,16 @@
 				<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
 					<p style="text-align:right"><a href="./rice_order.php" class="btn-border-b">実績一覧に戻る</a></p>
 					<h2>顧客情報一覧</h2><br>
+					<p>※お名前クリックで顧客情報修正画面が開きます</p>
 					<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 						<tr style="background:#ccccff">
-							<th class="tbd_th_p1"><strong>管理番号</strong></th>
-							<th class="tbd_th_p3"><strong>申込日時</strong></th>
-							<th class="tbd_th_p3"><strong>お名前</strong></th>
+							<th class="tbd_th_p1"><strong>No.</strong></th>
+							<th class="tbd_th_p2"><strong>申込日時</strong></th>
+							<th class="tbd_th_p2"><strong>お名前</strong></th>
 							<th class="tbd_th_p3"><strong>ご住所</strong></th>
-							<th class="tbd_th_p3"><strong>コース</strong></th>
-							<th class="tbd_th_p2" COLSPAN="12"><strong>配送予定</strong></th>
+							<th class="tbd_th_p2"><strong>コース</strong></th>
+							<th class="tbd_th_p2"><strong>次回配送予定</strong></th>
+<!--							<th class="tbd_th_p2" COLSPAN="12"><strong>配送予定</strong></th>-->
 							</tr>
 						<?php
 						// ================================================
@@ -574,8 +576,10 @@
 						$cnt = 0;
 						$g_idxnum = "";
 						$g_year = "";
+						$d_flg = 0;
 						while ($row = $rs->fetch_array()) {
 							if($g_idxnum <> $row['idxnum']){
+								$d_flg = 0;
 								$g_idxnum = $row['idxnum'];
 								if($cnt > 0){ ?>
 									</tr>
@@ -595,20 +599,11 @@
 									<td class="tbd_td_p3_r"><? echo $row['category']."<br>".$row['weight']."kg"; ?></td>
 								<? 
 								++$cnt;
-							}
-							if($row['output_flg'] > 0 ){ ?>
-								<td class="tbd_td_p4_r" style="background-color:#808080;">
-							<? }else{ ?>
-								<td class="tbd_td_p4_r">
+							} ?>
+							<? if($d_flg == 0){
+								$d_flg = 1; ?>
+								<td class="tbd_td_p4_r"><?= date('Y/n/j', strtotime($row['delivery_date'])); ?></td>
 							<? } ?>
-								<? if($g_year <> date('Y', strtotime($row['delivery_date']))){
-									echo date('y/<br>n/j', strtotime($row['delivery_date']));
-								}else{
-									echo date('n/j', strtotime($row['delivery_date']));
-								}
-								$g_year = date('Y', strtotime($row['delivery_date']));
-								?>
-							</td>
 						<? } ?>
 						</tr>
 					</table><br><br><br>
