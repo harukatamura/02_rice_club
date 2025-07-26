@@ -596,7 +596,7 @@
 								<div class="fare-monthcontainer">
 									<ul>
 										<?
-										$query = "SELECT category, SUM(weight) as weight ";
+										$query = "SELECT category, SUM(weight) as weight, COUNT(*) as cnt ";
 										$query .= " FROM php_rice_subscription ";
 										$query .= " WHERE status='申込' ";
 										$query .= " GROUP BY category ";
@@ -608,27 +608,30 @@
 										}
 										$arr_performance =  [];
 										$all_weight = 0;
+										$all_cnt = 0;
 										while ($row = $rs->fetch_array()) {
 											$arr_performance[] = $row;
+											$all_cnt += $row['cnt'];
 											$all_weight += $row['weight'];
 										}
-										if($all_weight > 200){
-											$px = 0.7;
-										}else if($all_weight > 100){
-											$px = 1.0;
+										if($all_cnt > 200){
+											$px = 3.5;
+										}else if($all_cnt > 100){
+											$px = 5;
 										}else{
-											$px = 1.5;
+											$px = 7.5;
 										}
 										for($i=0; $i<count($arr_performance); $i++) {
 										?>
 											<li class="fare-month">
 												<span class="ttl2">
 													<? if ($arr_performance[$i]['category'] <> "") { ?>
+													<b><? echo $arr_performance[$i]['cnt'] ?></b><font size="3">件</font><br>
 													<b><? echo $arr_performance[$i]['weight'] ?></b><font size="3">kg</font>
-													<? $all_buynum +=$arr_performance[$i]['weight']; ?>
+													<? $all_buynum +=$arr_performance[$i]['cnt']; ?>
 													<? } ?>
 												</span>
-												<span class="fare-price" style="height:<? echo $arr_performance[$i]['weight']  * $px ?>px;" ></span>
+												<span class="fare-price" style="height:<? echo $arr_performance[$i]['cnt']  * $px ?>px;" ></span>
 												<span class="ttl1" style="line-height: 1.0;">
 													<font size="3">
 														<b><? echo $arr_performance[$i]['category'] ?></b>
@@ -640,11 +643,12 @@
 										?>
 										<li class="fare-month">
 											<span class="ttl2">
-												<? if ($all_weight > 0) { ?>
-												<b><? echo $all_weight ?></b><font size="3">kg</font>
+												<? if ($all_cnt > 0) { ?>
+													<b><? echo $all_cnt ?></b><font size="3">件</font><br>
+													<b><? echo $all_weight ?></b><font size="3">kg</font>
 												<? } ?>
 											</span>
-											<span class="fare-price" style="height:<? echo $all_weight  * $px ?>px;" ></span>
+											<span class="fare-price" style="height:<? echo $all_cnt  * $px ?>px;" ></span>
 											<span class="ttl1" style="line-height: 1.0;">
 												<font size="4">
 													<b>合計</b>
@@ -772,6 +776,7 @@
 								$g_date = $row['insdt'];
 								$sum_cnt = 0;
 								$sum_cash = 0;
+								$g_category = "";
 							} ?>
 							<? if(($cnt % 2) == 0){ ?>
 								<tr style="background-color:#f5f5f5;">
