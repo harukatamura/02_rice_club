@@ -174,7 +174,7 @@
 	}
 	/* --- ヘッダーセル（th） --- */
 	th.tbd_th_p1 {
-	width:200px;
+	width:100px;
 	padding: 5px 4px; /* 見出しセルのパディング（上下、左右） */
 	color: white;
 	background-color: #2B8225; /* 見出しセルの背景色 */
@@ -517,13 +517,12 @@
 		}
 		//-->
 	</script>
-	<?php $html->output_htmlheadinfo3($prgname); ?>
+	<?php $html->output_htmlheadinfo2($prgname); ?>
 	<script type="text/javascript">
 		//編集ボタン
 		function edit_name(idxnum){
 			//画面項目設定
-		//	document.forms['frm'].action = './rice_edit.php?idxnum=' + idxnum;
-		//	document.forms['frm'].submit();
+			window.open('./rice_kokyaku.php?idx=' + idxnum);
 		}
 	</script>
 </head>
@@ -545,7 +544,7 @@
 					<h2>顧客情報一覧</h2><br>
 					<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 						<tr style="background:#ccccff">
-							<th class="tbd_th_p3"><strong>管理番号</strong></th>
+							<th class="tbd_th_p1"><strong>管理番号</strong></th>
 							<th class="tbd_th_p3"><strong>申込日時</strong></th>
 							<th class="tbd_th_p3"><strong>お名前</strong></th>
 							<th class="tbd_th_p3"><strong>ご住所</strong></th>

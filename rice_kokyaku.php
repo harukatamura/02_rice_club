@@ -55,7 +55,9 @@
 	$comm->ouputlog("get(idxnum)=" . $g_idxnum, $prgid, SYS_LOG_TYPE_DBUG);
 
 	if($_GET['flg'] == 1){
-		$alert = '<p><font color="red"><strong>登録が完了しました。</strong></font></p>';
+		$alert = '<p><font color="red"><strong>更新が完了しました。</strong></font></p>';
+	}else if($_GET['flg'] == 2){
+		$alert = '<p><font color="red"><strong>更新に失敗しました。</strong></font></p>';
 	}
 	//----------------------------------------------------------------------------------------------
 	// システムデータの取得
@@ -236,6 +238,7 @@
 	<script type="text/javascript" src="//jpostal-1006.appspot.com/jquery.jpostal.js"></script>
 	<script src="sweetalert2/dist/sweetalert2.all.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+	<script src="https://ajaxzip3.github.io/ajaxzip3.js" charset="UTF-8"></script>
 	<!-- ================================================== -->
 	<!-- ▼郵便番号や各種住所の入力欄に関するID名を指定する -->
 	<!-- ================================================== -->
@@ -600,6 +603,7 @@
 			background-color: #f4b3c2;
 		}
 		.button_div {
+			text-align: center;
 			display: flex;
 			width: 100%;
 		}
@@ -618,69 +622,68 @@
 
 	<script type="text/javascript">
 		function Mclk_Update(g_idx){
-			var json_check = JSON.parse('<?php echo $json_check; ?>');
-			var p_alert = "";
-			json_check.forEach(function(val){
-				if(document.forms['frm'].elements[val].value == ''){
-					var p_alert = p_alert + "\n" + val;
+			var status = document.forms['frm'].elements["状態"].value;
+			let name = $('#name').val();
+			let phonenum1 = $('#phonenum1').val();
+			let postcode1 = $('#postcode1').val();
+			let postcode2 = $('#postcode2').val();
+			let address1 = $('#address1').val();
+			let address2 = $('#address2').val();
+			let email = $('#mailaddress').val();
+			let submit_punc = '';
+			let submit_swal = '';
+			// 必須項目未入力ならエラー表示
+			if(name == '' || phonenum1 == '' || phonenum1 == null || postcode1 == '' || postcode2 == '' || address1 == '' || address2 == '' || email == '') {
+				if (name == '') {
+					submit_swal = '氏名'
+					submit_punc = '・';
 				}
-			});
-			if(p_alert !== ""){
+				if (phonenum1 == '' || phonenum1 == null) {
+					submit_swal += submit_punc + '電話番号'
+					submit_punc = '・';
+				}
+				if (postcode1 == '' || postcode2 == '') {
+					submit_swal += submit_punc + '郵便番号'
+					submit_punc = '・';
+				}
+				if (address1 == '選択してください' || address2 == '') {
+					submit_swal += submit_punc + '住所'
+					submit_punc = '・';
+				}
+				if (email == '') {
+					submit_swal += submit_punc + 'メールアドレス'
+				}
+				Swal.fire
+				(
+					{
+						type: 'error', 
+						title: '以下の必須項目が未入力です', 
+						html: submit_swal
+					}
+				);
+			}else if(status == 9){
 				//伝票発行済みの場合はアラートで確認
-				alert("必須項目が入力されていません。\n確認してください。\n\n<不足項目>"+p_alert);
-				return false;
-			}else{
-				let name = $('#name').val();
-				let phonenum1 = $('#phonenum1').val();
-				let postcode1 = $('#postcode1').val();
-				let postcode2 = $('#postcode2').val();
-				let address1 = $('#address1').val();
-				let address2 = $('#address2').val();
-				let submit_punc = '';
-				let submit_swal = '';
-				// 必須項目未入力ならエラー表示
-				if (name == '' || phonenum1 == '' || phonenum1 == null || postcode1 == '' || postcode2 == '' || address1 == '' || address2 == '' || email == '') {
-					if (name == '') {
-						submit_swal = '氏名'
-						submit_punc = '・';
-					}
-					if (phonenum1 == '' || phonenum1 == null) {
-						submit_swal += submit_punc + '電話番号'
-						submit_punc = '・';
-					}
-					if (postcode1 == '' || postcode2 == '') {
-						submit_swal += submit_punc + '郵便番号'
-						submit_punc = '・';
-					}
-					if (address1 == '選択してください' || address2 == '') {
-						submit_swal += submit_punc + '住所'
-						submit_punc = '・';
-					}
-					if (email == '') {
-						submit_swal += submit_punc + 'メールアドレス'
-					}
-					Swal.fire
-					(
-						{
-							type: 'error', 
-							title: '以下の必須項目が未入力です', 
-							html: submit_swal
-						}
-					);
-				} else if(status == 9){
-					//伝票発行済みの場合はアラートで確認
-					if(window.confirm('発送準備中のデータがあります。\n修正後は必ずJEMTC担当者にご連絡ください。\n')){
-						document.forms['frm'].action = './rice_sql.php?do=update&idx='+idxnum;
+				Swal.fire({
+					title: '発送準備中のデータがあります',
+					text: '修正後は必ずJEMTC担当者にご連絡ください',
+					type: 'warning',
+					showCancelButton: true,
+					confirmButtonText: '更新',
+					cancelButtonText: 'キャンセル'  , 
+					allowOutsideClick : false   //枠外クリックは許可しない
+					}).then((result) => {
+					if (result.value) {
+						document.forms['frm'].action = './rice_sql.php?do=update&idx='+g_idx;
 						document.forms['frm'].submit();
 						return false;
 					}else{
 						return false;
 					}
-				}else{
-					document.forms['frm'].action = './rice_sql.php?do=update&idx='+idxnum;
-					document.forms['frm'].submit();
-					return false;
-				}
+				});
+			}else{
+				document.forms['frm'].action = './rice_sql.php?do=update&idx='+g_idx;
+				document.forms['frm'].submit();
+				return false;
 			}
 		}
 	</script>
@@ -713,7 +716,7 @@
 						$table = "php_rice_subsucription";
 						$table_p = "php_rice_personal_info";
 						$collist = $dba->mysql_get_collist($db, $table_p);
-						$arr_keylist = array("名前", "電話番号1", "電話番号2", "郵便番号１", "郵便番号２", "都道府県", "ご住所", "メールアドレス");
+						$arr_keylist = array("名前", "電話番号1", "電話番号2", "郵便番号１", "郵便番号２", "都道府県", "ご住所", "建物名", "メールアドレス");
 						//データを取得
 						$query = "
 							 SELECT A.idxnum, A.name, A.address1, A.address2, A.address3, A.postcd1, A.postcd2, A.phonenum1, A.phonenum2
@@ -742,23 +745,12 @@
 								<div class="col-lg-12">
 									<h4>お客様情報</h4>
 									<hr>
-									<div class="form-group">
-										<div class="col-lg-12">
-											<?php
-											if($status == 1){
-												echo '<font color="red"><strong>ステータス　　：本登録済</font></strong></br></br>';
-											}else if($status == 9){
-												echo '<font color="red"><strong>ステータス　　：伝票発行済</strong></font></br></br>';
-											}
-											?>
-										</div>
-									</div>
 									<!-- 名前入力 -->
 									<div class="col-lg-6">
 										<div class="form-group">
 											<img src="./images/hisu.gif" alt="必須" >&nbsp;
 											<label>氏名（漢字）（16文字以内）</label>
-											<input type="text" style="display:none;" name="インデックス" value="<?php echo $row['subsc_idxnum'] ?>">
+											<input type="text" style="display:none;" name="インデックス" value="<?php echo $row['idxnum'] ?>">
 											<input type="text" id="name" class="form-control required_form" name="名前" value="<?php echo $row['name'] ?>">
 										</div>
 									</div>
@@ -843,7 +835,7 @@
 									<div class="col-lg-12">
 										<div class="form-group">
 											<label>備考（その他希望内容）</label>
-											<textarea name="備考" rows="3" cols="70" class="form-control"><?php echo $row['remarks'] ?></textarea>
+											<textarea name="注文時備考" rows="3" cols="70" class="form-control"><?php echo $row['remarks'] ?></textarea>
 										</div>
 									</div>
 									<!--元データ-->
@@ -886,9 +878,13 @@
 											$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 										}
 										$i = 0;
+										$status = 0;
 										while ($row2 = $rs2->fetch_array()) { 
-											$min_date = $row2['delivery_date'];
-											$max_date = date('Y-m-d', strtotime('+3 days', strtotime($row2['delivery_date'])));
+											if($row2['status'] <> "注文受付"){
+												$status = 9;
+											}
+											$min_date = date('Y-m-26', strtotime($row2['delivery_date']));
+											$max_date = date('Y-m-d', strtotime('+3 days', strtotime($min_date)));
 											?>
 											<? if($row2['status'] == "注文受付"){ ?>
 												<tr>
@@ -900,8 +896,8 @@
 													</td>
 													<td style="vertical-align:middle; text-align:right">
 														<select name="コース<?= $i; ?>">
-															<? foreach($category_list as $key => $val){ ?>
-																<option value="<?= $key; ?>" <? if($key == $row2['category']){echo "selected='selected'";} ?> ><?= $val; ?></option>
+															<? foreach($category_list as $val){ ?>
+																<option value="<?= $val; ?>" <? if($val == $row2['category']){echo "selected='selected'";} ?> ><?= $val; ?></option>
 															<? } ?>
 														</select>
 														<select name="量<?= $i; ?>">
@@ -912,24 +908,24 @@
 													</td>
 													<td style="vertical-align:middle; text-align:right">
 														<input type="date" name="配送日<?= $i; ?>" value="<?= $row2['delivery_date']; ?>" min="<?= $min_date; ?>" max="<?= $max_date; ?>">
-														<select name="到着指定時間<?= $i; ?>">
+														<select name="到着指定時間帯<?= $i; ?>">
 															<? foreach($timelist_r as $key => $val){ ?>
 																<option value="<?= $val; ?>" <? if($val == $row2['specified_times']){echo "selected='selected'";} ?> ><?= $key; ?></option>
 															<? } ?>
 														</select>
 													</td>
 													<td style="text-align:right; vertical-align:middle;">
-														<input type="text" pattern="^[0-9]+$" name="金額<? echo $j+1 ?>" size="6" value="<? echo $row2['tanka'] ?>"> 円
+														<input type="text" pattern="^[0-9]+$" name="金額<? echo $i ?>" size="6" value="<? echo $row2['tanka'] ?>"> 円
 													</td>
 													<td style="text-align:right; vertical-align:middle;">
-														<input type="text" pattern="^[0-9]+$" name="伝票番号<? echo $j+1 ?>" size="16" value="<? echo $row2['slipnumber'] ?>">
+														<input type="text" pattern="^[0-9]+$" name="伝票番号<? echo $i ?>" size="16" value="<? echo $row2['slipnumber'] ?>">
 													</td>
 													<td style="display:none">
-														<input type="text" name="インデックス<?= $i; ?>" value="<? echo $row2['ship_idxnum'] ?>">
+														<input type="text" name="配送インデックス<?= $i; ?>" value="<? echo $row2['ship_idxnum'] ?>">
 														<input type="text" name="Tコース<?= $i; ?>" value="<? echo $row2['category'] ?>">
 														<input type="text" name="T量<?= $i; ?>" value="<? echo $row2['weight'] ?>">
 														<input type="text" name="T配送日<?= $i; ?>" value="<? echo $row2['delivery_date'] ?>">
-														<input type="text" name="T到着指定時間<?= $i; ?>" value="<? echo $row2['specified_times'] ?>">
+														<input type="text" name="T到着指定時間帯<?= $i; ?>" value="<? echo $row2['specified_times'] ?>">
 														<input type="text" name="T金額<?= $i; ?>" value="<? echo $row2['tanka'] ?>">
 														<input type="text" name="T伝票番号<?= $i; ?>" value="<? echo $row2['slipnumber'] ?>">
 														<input type="text" name="end<?= $i; ?>">
@@ -966,16 +962,17 @@
 										} ?>
 									</table>
 								</div>
-								<input type="text" name="最大行" value="<?= $i; ?>">
+								<input type="text" name="最大行" value="<?= $i; ?>" style="display:none">
+								<input type="text" name="状態" value="<?= $status; ?>" style="display:none">
 								<div class="button_div">
 									<!--登録・戻るボタン-->
-									<div class="col-lg-4">
-										<div class="form-group">
+									<div class="col-lg-4" style="text-align:right;">
+										<div class="form-group" style="text-align:right;">
 											<input type="button" value="更新" class="btn-info btn-border" onclick="javascript:Mclk_Update(<? echo $g_idx ?>)">
 										</div>
 									</div>
-									<div class="col-lg-4">
-										<div class="form-group">
+									<div class="col-lg-4" style="text-align:right;">
+										<div class="form-group" style="text-align:right;">
 											<a href="telorder_list.php"><input type="button" value="閉じる" class="btn-info btn-border" onClick="window.close()"></a>
 										</div>
 									</div>
