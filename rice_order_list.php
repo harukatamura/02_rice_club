@@ -45,8 +45,6 @@
 	$db = "";
 	$result = $dba->mysql_con($db);
 	
-	$action_url = './kaijyo_top.php';
-	
 	foreach($_POST as $key=>$val) {
 		$comm->ouputlog("key =" .$key. " val =" . $val, $prgid, SYS_LOG_TYPE_DBUG);
 	}
@@ -519,7 +517,7 @@
 		}
 		//-->
 	</script>
-	<?php $html->output_htmlheadinfo2($prgname); ?>
+	<?php $html->output_htmlheadinfo3($prgname); ?>
 	<script type="text/javascript">
 		//編集ボタン
 		function edit_name(idxnum){
@@ -536,7 +534,7 @@
 	<table class="base" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 		<!-- ヘッダー情報生成 -->
 		<div id="header">
-			<p class="header_logo"><img src="images/logo_jemtc.png" alt="" />精米倶楽部顧客一覧</p>
+			<p class="header_logo"><img src="images/logo_jemtc.png" alt="" /><?= $prgname; ?></p>
 		</div>
 	</table>
 	<div id="contents">
@@ -547,6 +545,8 @@
 					<h2>顧客情報一覧</h2><br>
 					<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 						<tr style="background:#ccccff">
+							<th class="tbd_th_p3"><strong>管理番号</strong></th>
+							<th class="tbd_th_p3"><strong>申込日時</strong></th>
 							<th class="tbd_th_p3"><strong>お名前</strong></th>
 							<th class="tbd_th_p3"><strong>ご住所</strong></th>
 							<th class="tbd_th_p3"><strong>コース</strong></th>
@@ -559,12 +559,12 @@
 						//----- データ抽出
 						$query = "
 							SELECT A.name, B.category, B.weight, C.delivery_date, B.date_s, C.stopflg, C.output_flg, A.idxnum
-							, A.area, A.address2
+							, A.area, A.address2, A.insdt
 							FROM php_rice_personal_info A
 							LEFT OUTER JOIN php_rice_subscription B ON A.idxnum=B.personal_idxnum 
 							LEFT OUTER  JOIN php_rice_shipment C ON B.subsc_idxnum=C.subsc_idxnum 
 							WHERE A.status='申込' 
-							ORDER BY A.address1, A.area, A.idxnum, B.date_s, C.delivery_date, C.category, C.weight, A.postcd1
+							ORDER BY A.idxnum, A.address1, A.area, A.idxnum, B.date_s, C.delivery_date, C.category, C.weight, A.postcd1
 						";
 						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 						$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
@@ -585,6 +585,8 @@
 								<? }else{ ?>
 									<tr style="background-color:#ffffff;">
 								<? } ?>
+									<td class="tbd_td_p3_c"><? echo $row['idxnum']; ?></td>
+									<td class="tbd_td_p3_c"><? echo date('y/n/j h:i', strtotime($row['insdt'])); ?></td>
 									<td class="tbd_td_p3_c"><a href="Javascript:edit_name('<?= $row['idxnum']; ?>')"><? echo $row['name']; ?></a></td>
 									<? if($p_staff == "田村"|| $p_staff == "林" || $p_staff == "島村" || $p_compcd == "A"){ ?>
 										<td class="tbd_td_p3_l"><? echo $row['address2']; ?></td>
