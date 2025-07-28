@@ -77,11 +77,12 @@
 		$chksheet = $book->getSheetByName("リスト");
 		//フラグを立てて出力するデータを取得
 		foreach($outputno as $value){
-			$query = "UPDATE rice_shipment ";
+			$query = "UPDATE php_rice_shipment ";
 			$query .= " SET output_flg = 3";
+			$query .= " , slip_staff = '".$p_staff."'";
 			$query .= " ,upddt = " . sprintf("'%s'", date('YmdHis'));
 			$query .= " ,updcount = updcount + 1";
-			$query .= " WHERE idxnum = $value";
+			$query .= " WHERE ship_idxnum = $value";
 			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 			if (!($rs = $db->query($query))) {
@@ -96,7 +97,7 @@
 		$g_buynum = 0;
 		//出力対象のデータを取得
 		$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times";
-		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.p_way ";
+		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.p_way, B.remarks ";
 		$query .= " FROM php_rice_shipment A";
 		$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
 		$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
@@ -110,6 +111,7 @@
 		while($row = $rs->fetch_array()){
 			++$i;
 			++$j;
+			++$t;
 			$j2 = $j - 1;
 			//佐川シートのセルに値をセット
 			$sheet->setCellValueExplicitByColumnAndRow(2, $i, $row['phonenum1'], PHPExcel_Cell_DataType::TYPE_STRING);
@@ -168,6 +170,8 @@
 		$chksheet->getPageSetup()->setPrintArea('A1:H'.$j);
 		$chksheet->setCellValueByColumnAndRow(0, 1, "【精米倶楽部】".date('Y/n/j')."(".$p_staff."発行)");
 		$chksheet->getStyleByColumnAndRow(0, 1)->getFont()->setBold(true);
+		//シートを非表示にする
+		$sheet->setSheetState(PHPExcel_Worksheet::SHEETSTATE_HIDDEN);
 		//リストを作成する
 		$j=4;
 		asort($category_list);
@@ -181,7 +185,7 @@
 					$chksheet->setCellValueByColumnAndRow(17, $j, date('Y/n/j',strtotime($val3)));
 					$chksheet->setCellValueByColumnAndRow(18, $j, $sumnum_list[$val][$val2][$val3]);
 					//セルに色をつける
-					$sheet->getStyle('P5:S'.$j)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID)->getStartColor()->setARGB("ffff00");
+					$chksheet->getStyle('P5:S'.$j)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID)->getStartColor()->setARGB("ffff00");
 					//罫線をつける
 					$chksheet->getStyle('P5:S'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
 					++$j;
@@ -192,8 +196,8 @@
 		$query = "UPDATE php_rice_shipment ";
 		$query .= " SET output_flg = 9";
 		$query .= " , slip_staff = '".$p_staff."'";
-		$query .= " , outputdt = NOW()";
-		$query .= " , status = 9";
+		$query .= " ,upddt = " . sprintf("'%s'", date('YmdHis'));
+		$query .= " ,updcount = updcount + 1";
 		$query .= " WHERE output_flg = 3 ";
 		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
@@ -202,7 +206,7 @@
 		}
 		//ファイル出力
 		$book->setActiveSheetIndex(0);
-		$filename = "【精米倶楽部】"date('Ymd')."_佐川伝票.xlsx";
+		$filename = "【精米倶楽部】".date('Ymd')."_佐川伝票.xlsx";
 		header('Content-Type: application/vnd.ms-excel');
 		header('Content-Disposition: attachment;filename="' . $filename . '"');
 		header('Cache-Control: max-age=0');
@@ -657,7 +661,7 @@
 	<table class="base" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 		<!-- ヘッダー情報生成 -->
 		<div id="header">
-			<p><img src="images/logo_reserv_slip.png" alt="" /></p>
+			<p class="header_logo"><img src="images/logo_jemtc.png" alt="" />精米倶楽部伝票発行</p>
 		</div>
 	</table>
 	<div id="contents">
@@ -669,7 +673,7 @@
 				　②佐川伝票データの取込<a href="./pdf/yamato_manual_ns.pdf" target="_blank">（マニュアル）</a>　<a href="./sagawa_upload.php" target="_blank">取込画面</a><br>
 			</p>
 			<div id="formWrap">
-				<form name="frm" method = "post" action="./reserv_slip.php">
+				<form name="frm" method = "post" action="./rice_slip.php">
 					<h2 id="sub1">検索条件</h2><br>
 						<fieldset>
 							<input type="radio" name="表示制御" id="d-item-1" class="radio-inline__input" style="font-size: 30px;" value="1" onChange="javascript:clickBtn1();" <? if($p_display==1){echo "checked=\"checked\"";}?>/>
@@ -754,7 +758,8 @@
 						$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
 						$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
 						$query .= " WHERE A.stopflg = 0";
-						$query .= "  AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')";
+						$query .= " AND A.output_flg = 0";
+						$query .= " AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')";
 						$query .= " ORDER BY A.output_flg, A.category, A.weight, C.idxnum";
 						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 						$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
