@@ -781,7 +781,7 @@
 						$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
 						$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
 						$query .= " WHERE A.stopflg = 0";
-						$query .= " AND A.delivery_date BETWEEN '".date('Y-m-01', strtotime($p_year.$p_month))."' AND LAST_DAY('".date('Y-m-01', strtotime($p_year.$p_month))."')";
+						$query .= "  AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')";
 						$query .= " ORDER BY A.output_flg, C.postcd1, C.postcd2";
 						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 						$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);

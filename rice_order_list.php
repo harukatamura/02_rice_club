@@ -589,7 +589,7 @@
 									<tr style="background-color:#ffffff;">
 								<? } ?>
 									<td class="tbd_td_p3_c"><? echo $row['idxnum']; ?></td>
-									<td class="tbd_td_p3_c"><? echo date('y/n/j h:i', strtotime($row['insdt'])); ?></td>
+									<td class="tbd_td_p3_c"><? echo date('y/n/j H:i', strtotime($row['insdt'])); ?></td>
 									<td class="tbd_td_p3_c"><a href="Javascript:edit_name('<?= $row['idxnum']; ?>')"><? echo $row['name']; ?></a></td>
 									<? if($p_staff == "田村"|| $p_staff == "林" || $p_staff == "島村" || $p_compcd == "A"){ ?>
 										<td class="tbd_td_p3_l"><? echo $row['address2']; ?></td>

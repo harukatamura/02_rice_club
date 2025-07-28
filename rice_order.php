@@ -76,8 +76,8 @@
 	//会社
 	$p_compcd = $_COOKIE['con_perf_compcd'];
 	$p_staff = $_COOKIE['con_perf_staff'];
-	//JEMTC職員ではない場合、画面を表示させない
-	if ($p_compcd == "P") {
+	//JEMTC・アドネットのみ画面を表示
+	if ($p_compcd == "J" || $p_compcd == "A") {
 		$p_display = 4;
 	}
 
@@ -581,236 +581,242 @@
 			<p class="header_logo"><img src="images/logo_jemtc.png" alt="" />精米倶楽部実績一覧</p>
 		</div>
 	</table>
-	<div id="contents">
-		<div id="main">
-			<div id="formWrap">
-				<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
-					<p style="text-align:right"><a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a></p>
-					<h2>全体実績</h2><br>
-					<div class="fare">
-						<left>
-							<div class="fare-calendar">
-							<!--　販売実績グラフ -->
-							【累計販売実績】
-							<div class="fare-rates">
-								<div class="fare-monthcontainer">
-									<ul>
-										<?
-										$query = "SELECT category, SUM(weight) as weight, COUNT(*) as cnt ";
-										$query .= " FROM php_rice_subscription ";
-										$query .= " WHERE status='申込' ";
-										$query .= " GROUP BY category ";
-										$query .= " ORDER BY category";
-										$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
-										$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-										if (!($rs = $db->query($query))) {
-											$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-										}
-										$arr_performance =  [];
-										$all_weight = 0;
-										$all_cnt = 0;
-										while ($row = $rs->fetch_array()) {
-											$arr_performance[] = $row;
-											$all_cnt += $row['cnt'];
-											$all_weight += $row['weight'];
-										}
-										if($all_cnt > 200){
-											$px = 3.5;
-										}else if($all_cnt > 100){
-											$px = 5;
-										}else{
-											$px = 7.5;
-										}
-										for($i=0; $i<count($arr_performance); $i++) {
-										?>
+	<? if($p_display == 4){ ?>
+		<div id="contents">
+			<div id="main">
+				<div id="formWrap">
+					<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
+						<p style="text-align:right"><a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a></p>
+						<h2>全体実績</h2><br>
+						<div class="fare">
+							<left>
+								<div class="fare-calendar">
+								<!--　販売実績グラフ -->
+								【累計販売実績】
+								<div class="fare-rates">
+									<div class="fare-monthcontainer">
+										<ul>
+											<?
+											$query = "SELECT category, SUM(weight) as weight, COUNT(*) as cnt ";
+											$query .= " FROM php_rice_subscription ";
+											$query .= " WHERE status='申込' ";
+											$query .= " GROUP BY category ";
+											$query .= " ORDER BY category";
+											$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+											$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+											if (!($rs = $db->query($query))) {
+												$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+											}
+											$arr_performance =  [];
+											$all_weight = 0;
+											$all_cnt = 0;
+											while ($row = $rs->fetch_array()) {
+												$arr_performance[] = $row;
+												$all_cnt += $row['cnt'];
+												$all_weight += $row['weight'];
+											}
+											if($all_cnt > 200){
+												$px = 3.5;
+											}else if($all_cnt > 100){
+												$px = 5;
+											}else{
+												$px = 7.5;
+											}
+											for($i=0; $i<count($arr_performance); $i++) {
+											?>
+												<li class="fare-month">
+													<span class="ttl2">
+														<? if ($arr_performance[$i]['category'] <> "") { ?>
+														<b><? echo $arr_performance[$i]['cnt'] ?></b><font size="3">件</font><br>
+														<b><? echo $arr_performance[$i]['weight'] ?></b><font size="3">kg</font>
+														<? $all_buynum +=$arr_performance[$i]['cnt']; ?>
+														<? } ?>
+													</span>
+													<span class="fare-price" style="height:<? echo $arr_performance[$i]['cnt']  * $px ?>px;" ></span>
+													<span class="ttl1" style="line-height: 1.0;">
+														<font size="3">
+															<b><? echo $arr_performance[$i]['category'] ?></b>
+														</font>
+													</span>
+												</li>
+											<?
+											}
+											?>
 											<li class="fare-month">
 												<span class="ttl2">
-													<? if ($arr_performance[$i]['category'] <> "") { ?>
-													<b><? echo $arr_performance[$i]['cnt'] ?></b><font size="3">件</font><br>
-													<b><? echo $arr_performance[$i]['weight'] ?></b><font size="3">kg</font>
-													<? $all_buynum +=$arr_performance[$i]['cnt']; ?>
+													<? if ($all_cnt > 0) { ?>
+														<b><? echo $all_cnt ?></b><font size="3">件</font><br>
+														<b><? echo $all_weight ?></b><font size="3">kg</font>
 													<? } ?>
 												</span>
-												<span class="fare-price" style="height:<? echo $arr_performance[$i]['cnt']  * $px ?>px;" ></span>
+												<span class="fare-price" style="height:<? echo $all_cnt  * $px ?>px;" ></span>
 												<span class="ttl1" style="line-height: 1.0;">
-													<font size="3">
-														<b><? echo $arr_performance[$i]['category'] ?></b>
+													<font size="4">
+														<b>合計</b>
 													</font>
 												</span>
 											</li>
-										<?
-										}
-										?>
-										<li class="fare-month">
-											<span class="ttl2">
-												<? if ($all_cnt > 0) { ?>
-													<b><? echo $all_cnt ?></b><font size="3">件</font><br>
-													<b><? echo $all_weight ?></b><font size="3">kg</font>
-												<? } ?>
-											</span>
-											<span class="fare-price" style="height:<? echo $all_cnt  * $px ?>px;" ></span>
-											<span class="ttl1" style="line-height: 1.0;">
-												<font size="4">
-													<b>合計</b>
-												</font>
-											</span>
-										</li>
-									</ul>
+										</ul>
+									</div>
 								</div>
-							</div>
-							<div>
-							<!--　詳細内訳 -->
-							</div>
-							</div>
-						</left>
-					</div><br><br>
-					<h2>実績詳細</h2><br>
-					<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
-						<tr><td class="category"><strong>コース別実績</strong></td></tr>
-					</table><br>
-					<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
-						<tr style="background:#ccccff">
-							<th class="tbd_th_p3"><strong>コース</strong></th>
-							<th class="tbd_th_p1"><strong>量(kg)</strong></th>
-							<th class="tbd_th_p1"><strong>件数(件)</strong></th>
-							<th class="tbd_th_p2"><strong>単価(円)</strong></th>
-							<th class="tbd_th_p2"><strong>小計(円)</strong></th>
-							</tr>
-						<?php
-						// ================================================
-						// ■　□　■　□　全体表示　■　□　■　□
-						// ================================================
-						//----- データ抽出
-						$query = "
-							SELECT A.category, A.weight, COUNT(*) as cnt, B.tanka
-							FROM php_rice_subscription A 
-							LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
-							WHERE A.status='申込' 
-							GROUP BY A.category, A.weight 
-							ORDER BY A.category, A.weight
-						";
-						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
-						$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-						if (!($rs = $db->query($query))) {
-							$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-						}
-						//初期化
-						$cnt = 0;
-						$sum_cnt = 0;
-						$sum_cash = 0;
-						while ($row = $rs->fetch_array()) {
-							if(($cnt % 2) == 0){ ?>
-								<tr style="background-color:#f5f5f5;">
-							<? }else{ ?>
-								<tr style="background-color:#ffffff;">
-							<? } ?>
-								<? if($g_category <> $row['category']){ ?>
-									<td class="tbd_td_p4_l"><? echo $row['category'] ?></td>
+								<div>
+								<!--　詳細内訳 -->
+								</div>
+								</div>
+							</left>
+						</div><br><br>
+						<h2>実績詳細</h2><br>
+						<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+							<tr><td class="category"><strong>コース別実績</strong></td></tr>
+						</table><br>
+						<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+							<tr style="background:#ccccff">
+								<th class="tbd_th_p3"><strong>コース</strong></th>
+								<th class="tbd_th_p1"><strong>量(kg)</strong></th>
+								<th class="tbd_th_p1"><strong>件数(件)</strong></th>
+								<th class="tbd_th_p2"><strong>単価(円)</strong></th>
+								<th class="tbd_th_p2"><strong>小計(円)</strong></th>
+								</tr>
+							<?php
+							// ================================================
+							// ■　□　■　□　全体表示　■　□　■　□
+							// ================================================
+							//----- データ抽出
+							$query = "
+								SELECT A.category, A.weight, COUNT(*) as cnt, B.tanka
+								FROM php_rice_subscription A 
+								LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
+								WHERE A.status='申込' 
+								GROUP BY A.category, A.weight 
+								ORDER BY A.category, A.weight
+							";
+							$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+							$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+							if (!($rs = $db->query($query))) {
+								$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+							}
+							//初期化
+							$cnt = 0;
+							$sum_cnt = 0;
+							$sum_cash = 0;
+							while ($row = $rs->fetch_array()) {
+								if(($cnt % 2) == 0){ ?>
+									<tr style="background-color:#f5f5f5;">
 								<? }else{ ?>
-									<td class="tbd_td_p4_l"></td>
-								<? }
-								$g_category = $row['category']; ?>
-								<td class="tbd_td_p3_r"><? echo $row['weight']; ?></td>
-								<td class="tbd_td_p3_r"><? echo $row['cnt']; ?></td>
-								<td class="tbd_td_p4_r"><? echo number_format($row['tanka']); ?></td>
-								<td class="tbd_td_p4_r"><? echo number_format($row['cnt'] * $row['tanka']); ?></td>
-							</tr>
-							<? 
-							++$cnt;
-							$sum_cnt += $row['cnt'];
-							$sum_cash += $row['cnt'] * $row['tanka'];
-						} ?>
-						<tr style="background-color:#d3d3d3;">
-							<td class="tbd_td_p4_l" COLSPAN="2">合計</td>
-							<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
-							<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
-						</tr>
-					</table><br><br><br>
-					<h2>日別実績</h2><br>
-						<?php
-						// ================================================
-						// ■　□　■　□　全体表示　■　□　■　□
-						// ================================================
-						//----- データ抽出
-						$query = "
-							SELECT DATE(A.insdt) as insdt, A.category, A.weight, COUNT(*) as cnt, B.tanka
-							FROM php_rice_subscription A 
-							LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
-							WHERE A.status='申込' 
-							GROUP BY DATE(A.insdt), A.category, A.weight 
-							ORDER BY A.insdt, A.category, A.weight
-						";
-						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
-						$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-						if (!($rs = $db->query($query))) {
-							$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-						}
-						//初期化
-						$cnt = 0;
-						$g_date = "";
-						$sum_cnt = 0;
-						$sum_cash = 0;
-						$g_category = "";
-						while ($row = $rs->fetch_array()) {
-							if($g_date <> $row['insdt']){ 
-								if($cnt > 0){ ?>
-									<tr style="background-color:#d3d3d3;">
-										<td class="tbd_td_p4_l" COLSPAN="2">合計</td>
-										<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
-										<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
-									</tr>
-								</table><br>
+									<tr style="background-color:#ffffff;">
 								<? } ?>
-								<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
-									<tr><td class="category"><strong><? echo date('Y/n/j', strtotime($row['insdt']))?></strong></td></tr>
-								</table><br>
-								<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
-									<tr style="background:#ccccff">
-										<th class="tbd_th_p3"><strong>コース</strong></th>
-										<th class="tbd_th_p1"><strong>量(kg)</strong></th>
-										<th class="tbd_th_p1"><strong>件数(件)</strong></th>
-										<th class="tbd_th_p2"><strong>単価(円)</strong></th>
-										<th class="tbd_th_p2"><strong>小計(円)</strong></th>
-										</tr>
-							<?
-								$g_date = $row['insdt'];
-								$sum_cnt = 0;
-								$sum_cash = 0;
-								$g_category = "";
+									<? if($g_category <> $row['category']){ ?>
+										<td class="tbd_td_p4_l"><? echo $row['category'] ?></td>
+									<? }else{ ?>
+										<td class="tbd_td_p4_l"></td>
+									<? }
+									$g_category = $row['category']; ?>
+									<td class="tbd_td_p3_r"><? echo $row['weight']; ?></td>
+									<td class="tbd_td_p3_r"><? echo $row['cnt']; ?></td>
+									<td class="tbd_td_p4_r"><? echo number_format($row['tanka']); ?></td>
+									<td class="tbd_td_p4_r"><? echo number_format($row['cnt'] * $row['tanka']); ?></td>
+								</tr>
+								<? 
+								++$cnt;
+								$sum_cnt += $row['cnt'];
+								$sum_cash += $row['cnt'] * $row['tanka'];
 							} ?>
-							<? if(($cnt % 2) == 0){ ?>
-								<tr style="background-color:#f5f5f5;">
-							<? }else{ ?>
-								<tr style="background-color:#ffffff;">
-							<? } ?>
-								<? if($g_category <> $row['category']){ ?>
-									<td class="tbd_td_p4_l"><? echo $row['category'] ?></td>
-								<? }else{ ?>
-									<td class="tbd_td_p4_l"></td>
-								<? }
-								$g_category = $row['category']; ?>
-								<td class="tbd_td_p3_r"><? echo $row['weight']; ?></td>
-								<td class="tbd_td_p3_r"><? echo $row['cnt']; ?></td>
-								<td class="tbd_td_p4_r"><? echo number_format($row['tanka']); ?></td>
-								<td class="tbd_td_p4_r"><? echo number_format($row['cnt'] * $row['tanka']); ?></td>
-							</tr>
-							<? 
-							++$cnt;
-							$sum_cnt += $row['cnt'];
-							$sum_cash += $row['cnt'] * $row['tanka'];
-						} ?>
-						<? if($cnt > 0){ ?>
 							<tr style="background-color:#d3d3d3;">
 								<td class="tbd_td_p4_l" COLSPAN="2">合計</td>
 								<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
 								<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
 							</tr>
-						</table><br>
-						<? } ?>
-				</form>
+						</table><br><br><br>
+						<h2>日別実績</h2><br>
+							<?php
+							// ================================================
+							// ■　□　■　□　全体表示　■　□　■　□
+							// ================================================
+							//----- データ抽出
+							$query = "
+								SELECT DATE(A.insdt) as insdt, A.category, A.weight, COUNT(*) as cnt, B.tanka
+								FROM php_rice_subscription A 
+								LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
+								WHERE A.status='申込' 
+								GROUP BY DATE(A.insdt), A.category, A.weight 
+								ORDER BY DATE(A.insdt), A.category, A.weight
+							";
+							$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+							$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+							if (!($rs = $db->query($query))) {
+								$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+							}
+							//初期化
+							$cnt = 0;
+							$g_date = "";
+							$sum_cnt = 0;
+							$sum_cash = 0;
+							$g_category = "";
+							while ($row = $rs->fetch_array()) {
+								if($g_date <> $row['insdt']){ 
+									if($cnt > 0){ ?>
+										<tr style="background-color:#d3d3d3;">
+											<td class="tbd_td_p4_l" COLSPAN="2">合計</td>
+											<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
+											<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
+										</tr>
+									</table><br>
+									<? } ?>
+									<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+										<tr><td class="category"><strong><? echo date('Y/n/j', strtotime($row['insdt']))?></strong></td></tr>
+									</table><br>
+									<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+										<tr style="background:#ccccff">
+											<th class="tbd_th_p3"><strong>コース</strong></th>
+											<th class="tbd_th_p1"><strong>量(kg)</strong></th>
+											<th class="tbd_th_p1"><strong>件数(件)</strong></th>
+											<th class="tbd_th_p2"><strong>単価(円)</strong></th>
+											<th class="tbd_th_p2"><strong>小計(円)</strong></th>
+											</tr>
+								<?
+									$g_date = $row['insdt'];
+									$sum_cnt = 0;
+									$sum_cash = 0;
+									$g_category = "";
+								} ?>
+								<? if(($cnt % 2) == 0){ ?>
+									<tr style="background-color:#f5f5f5;">
+								<? }else{ ?>
+									<tr style="background-color:#ffffff;">
+								<? } ?>
+									<? if($g_category <> $row['category']){ ?>
+										<td class="tbd_td_p4_l"><? echo $row['category'] ?></td>
+									<? }else{ ?>
+										<td class="tbd_td_p4_l"></td>
+									<? }
+									$g_category = $row['category']; ?>
+									<td class="tbd_td_p3_r"><? echo $row['weight']; ?></td>
+									<td class="tbd_td_p3_r"><? echo $row['cnt']; ?></td>
+									<td class="tbd_td_p4_r"><? echo number_format($row['tanka']); ?></td>
+									<td class="tbd_td_p4_r"><? echo number_format($row['cnt'] * $row['tanka']); ?></td>
+								</tr>
+								<? 
+								++$cnt;
+								$sum_cnt += $row['cnt'];
+								$sum_cash += $row['cnt'] * $row['tanka'];
+							} ?>
+							<? if($cnt > 0){ ?>
+								<tr style="background-color:#d3d3d3;">
+									<td class="tbd_td_p4_l" COLSPAN="2">合計</td>
+									<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
+									<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
+								</tr>
+							</table><br>
+							<? } ?>
+					</form>
+				</div>
 			</div>
 		</div>
-	</div>
+	<? }else{ ?>
+		<div>
+			<p>この画面へのアクセス権限がありません。</p>
+		</div>
+	<? } ?> 
 </div>
 </body>
 
