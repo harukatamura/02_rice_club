@@ -94,7 +94,9 @@
 		$t = 0;
 		$g_category = "";
 		$g_cash = 0;
-		$g_buynum = 0;
+		$category_list = [];
+		$weight_list = [];
+		$sumnum_list = [];
 		//出力対象のデータを取得
 		$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times";
 		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.p_way, B.remarks ";
@@ -153,7 +155,7 @@
 			$chksheet->setCellValueByColumnAndRow(1, $j, $t);
 			$chksheet->setCellValueByColumnAndRow(2, $j, $row['name']);
 			$chksheet->setCellValueByColumnAndRow(3, $j, $row['category']);
-			$chksheet->setCellValueByColumnAndRow(4, $j, $row['weight']);
+			$chksheet->setCellValueByColumnAndRow(4, $j, $row['weight']."kg");
 			$chksheet->setCellValueByColumnAndRow(5, $j, $row['tanka']);
 			$chksheet->setCellValueByColumnAndRow(6, $j, date('Y/n/j', strtotime($row['delivery_date'])));
 			$chksheet->setCellValueByColumnAndRow(7, $j, $row['remarks']);
@@ -161,6 +163,12 @@
 			if(($g_category <> $row['category'] || $row['weight'] <> $g_weight) && $j > 4){
 				$chksheet->setBreak('A'.$j2, PHPExcel_Worksheet::BREAK_ROW);
 			}
+			if($g_category <> $row['category']){
+				$category_list[] = $row['category'];
+			}if($g_weight <> $row['weight']){
+				$weight_list[$row['category']] = $row['weight'];
+			}
+			$sumnum_list[$row['category']][$row['weight']] = $sumnum_list[$row['category']][$row['weight']] + 1;
 			$g_category = $row['category'];
 			$g_weight = $row['weight'];
 		}
@@ -170,28 +178,23 @@
 		$chksheet->getPageSetup()->setPrintArea('A1:H'.$j);
 		$chksheet->setCellValueByColumnAndRow(0, 1, "【精米倶楽部】".date('Y/n/j')."(".$p_staff."発行)");
 		$chksheet->getStyleByColumnAndRow(0, 1)->getFont()->setBold(true);
-		//シートを非表示にする
-		$sheet->setSheetState(PHPExcel_Worksheet::SHEETSTATE_HIDDEN);
 		//リストを作成する
 		$j=4;
 		asort($category_list);
-		asort($weight_list);
-		asort($p_date_list);
 		foreach($category_list as $val){
+				$chksheet->setCellValueByColumnAndRow(9, $j, $val);
+			asort($weight_list[$val]);
 			foreach($weight_list[$val] as $val2){
-				foreach($p_date_list[$val][$val2] as $val3){
-					$chksheet->setCellValueByColumnAndRow(15, $j, $val);
-					$chksheet->setCellValueByColumnAndRow(16, $j, $val3);
-					$chksheet->setCellValueByColumnAndRow(17, $j, date('Y/n/j',strtotime($val3)));
-					$chksheet->setCellValueByColumnAndRow(18, $j, $sumnum_list[$val][$val2][$val3]);
-					//セルに色をつける
-					$chksheet->getStyle('P5:S'.$j)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID)->getStartColor()->setARGB("ffff00");
-					//罫線をつける
-					$chksheet->getStyle('P5:S'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
-					++$j;
-				}
+				$chksheet->setCellValueByColumnAndRow(10, $j, $val2);
+				$chksheet->setCellValueByColumnAndRow(11, $j, $sumnum_list[$val][$val2]);
+				++$j;
 			}
 		}
+		$j=$j-1;
+		//セルに色をつける
+		$chksheet->getStyle('J4:L'.$j)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID)->getStartColor()->setARGB("ffff00");
+		//罫線をつける
+		$chksheet->getStyle('J4:L'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
 		//フラグを更新
 		$query = "UPDATE php_rice_shipment ";
 		$query .= " SET output_flg = 9";
@@ -205,7 +208,9 @@
 		$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 		}
 		//ファイル出力
-		$book->setActiveSheetIndex(0);
+		$book->setActiveSheetIndexByName('リスト');
+		//佐川シートを非表示にする
+		$sheet->setSheetState(PHPExcel_Worksheet::SHEETSTATE_HIDDEN);
 		$filename = "【精米倶楽部】".date('Ymd')."_佐川伝票.xlsx";
 		header('Content-Type: application/vnd.ms-excel');
 		header('Content-Disposition: attachment;filename="' . $filename . '"');
