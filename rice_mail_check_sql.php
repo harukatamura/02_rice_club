@@ -25,7 +25,6 @@ $comm = new comm();
 $db = "";
 $result = $dba->mysql_con($db);
 //処理実施
-$i = 0;
 $query = "SELECT A.mail_status, A.correstaf ";
 $query .= " FROM php_rice_mail A";
 $query .= " WHERE A.mail_idxnum = ". sprintf("'%s'", $p_idx);
@@ -35,7 +34,7 @@ if (!($rs = $db->query($query))) {
 	$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 }
 while ($row = $rs->fetch_array()) {
-	$status = $row['status'];
+	$status = $row['mail_status'];
 	$staff = $row['correstaf'];
 }
 $re = [$status,$staff];

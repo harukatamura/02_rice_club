@@ -579,14 +579,14 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 				//　POST送信成功
 				}).done(function(data) {
 					var result = JSON.parse(data);
-					var get_idx = result[0];
+					var get_status = result[0];
 					var get_staff = result[1];
 					if ( get_staff != '未選択' && staff != '未選択') {
 						if (get_staff != staff) {
 							staff_err_flg = 1;
 						}
 					}
-					if ( get_idx != old_status ) {
+					if ( get_status != old_status ) {
 						status_err_flg = 1;
 					}
 					if ( status_err_flg == 1) {
@@ -778,14 +778,12 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						<th class="tbd_th_1">NO.</th>
 						<th class="tbd_th_1">状況</th>
 						<th class="tbd_th_2">問合せ日時<br>(更新日時)</th>
-						<th class="tbd_th_2">お名前<br>（ふりがな）</th>
+						<th class="tbd_th_2">お名前</th>
 						<th class="tbd_th_3">都道府県</th>
 						<th class="tbd_th_2" title="マウスオンで全文表示">お問い合わせ内容※</th>
 						<th class="tbd_th_1">担当者</th>
 						<th class="tbd_th_1">緊急度</th>
-						<th class="tbd_th_1">種別<br>種別詳細</th>
 						<th class="tbd_th_2">最新対応内容</th>
-						<th class="tbd_th_2"></th>
 					</tr>
 				</thead>
 				<?php
@@ -921,8 +919,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						(<?php echo date('Y/m/d H:i', strtotime($row['upddt'])) ?>)
 					</td>
 					<td class="tbd_td_p1">
-						<?php echo $row['name'] ?><br>
-						(<?php echo $row['ruby'] ?>)
+						<?php echo $row['name'] ?>
 					</td>
 					<td class="tbd_td_p1">
 						<?php echo $row['address1'] ?>

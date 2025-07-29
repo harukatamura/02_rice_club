@@ -85,6 +85,7 @@ if ( $g_do == 'changetop'){
 	$comm->ouputlog("====一覧から取得====", $prgid, SYS_LOG_TYPE_INFO);
 	$comm->ouputlog("d_status=" . $d_status, $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog("d_urgency=" . $d_urgency, $prgid, SYS_LOG_TYPE_DBUG);
+}
 
 //詳細ページの状態が変更された時
 if ( $g_do == 'changedetail'){
@@ -406,7 +407,7 @@ function mysql_upd_rice_mail( $db) {
 	$_update .= ",urgency = ". sprintf("'%s'", $g_urgency);
 	$_update .= " ,correstaf = ". sprintf("'%s'", $g_correstaf);
 	$_update .= $chk_done;
-	$_update .= " WHERE idxnum = " . sprintf("'%s'", $g_idxnum);
+	$_update .= " WHERE mail_idxnum = " . sprintf("'%s'", $g_idxnum);
 
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
@@ -843,9 +844,9 @@ function mysql_change_send( $db) {
 	
 	//データ更新
 	$_insert = "INSERT INTO " . $table_detail;
-	$_insert .= " (insdt, upddt, corredt, idxnum, mail_idx, detail_idx, ";
+	$_insert .= " (insdt, upddt, corredt,  mail_idx,  ";
 	$_insert .= " email, name, correstaf, category, subject, contents, file, checkflg)";
-	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum', '$m_mail_idx', '$m_detail_idx',  ";
+	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum',  ";
 	$_insert .= " '$m_email', '$m_name', '$m_staff', 'コメント', '', 'メール確認待登録', '', 0)";
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);

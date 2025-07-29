@@ -537,12 +537,14 @@ $g_mail_idx=$_GET['mail_idx'];
 				if (!($rs = $db->query($query))) {
 					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 				}
+				$arr_temp = [];
+				$arr_temp_contents = [];
 				while ($row = $rs->fetch_array()) {
 					$arr_temp[$row['idxnum']] = $row['title'];
 					$arr_temp_contents[$row['title']] = $row['contents'];
 				}
 				$query = "";
-				$query .= "SELECT A.email, A.name, A.company, A.company, B.mail_status";
+				$query .= "SELECT A.email, A.name, A.company, A.company, B.mail_status, B.question";
 				$query .= " FROM php_rice_mail B ";
 				$query .= " LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum ";
 				$query .= " WHERE B.mail_idxnum = $g_idxnum";

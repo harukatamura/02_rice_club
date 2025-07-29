@@ -291,25 +291,25 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		//状態変更
 		function Change_Sql(idx){
 			var rowINX = 'do=changedetail&idxnum='+idx;
-			document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
+			document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 			document.forms['frm'].submit();
 		}
 
 		//返信ボタンクリック
 		function Push_Reply(idx){
 			var rowINX = 'do=reply&idxnum='+idx;
-			window.location.href = './info_mail_form.php?' + rowINX;
+			window.location.href = './rice_mail_form.php?' + rowINX;
 		}
 		//コメントボタンクリック
 		function Push_Coment(idx){
 			var rowINX = 'do=ins&idxnum='+idx;
-			window.open('./info_mail_form.php?' + rowINX);
+			window.open('./rice_mail_form.php?' + rowINX);
 		}
 		
 		//編集ボタンクリック
 		function Push_Edit(idx,m_idx){
 			var rowINX = 'do=edit&idxnum='+idx+'&mail_idx='+m_idx;
-			window.open('./info_mail_form.php?' + rowINX);
+			window.open('./rice_mail_form.php?' + rowINX);
 		}
 		//削除ボタンクリック
 		function Push_Delete(idx,m_idx){
@@ -317,7 +317,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			//確認ダイアログの表示
 			if(window.confirm('削除しますか？')){
 				//OKのときは実行
-				document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
+				document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 				document.forms['frm'].submit();
 			}
 		}
@@ -340,9 +340,9 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		<?php
 			//----- データ抽出
 			$query = "";
-			$query = $query."  SELECT B.mail_idxnum as idxnum ,A.name ,A.insdt ,A.upddt ,A.ruby ,A.company,";
+			$query = $query."  SELECT B.mail_idxnum ,A.name ,A.insdt ,A.upddt ,A.ruby ,A.company,";
 			$query = $query."  A.address1 ,A.address2 ,A.postcd1 ,A.postcd2 ,A.phonenum1 ,A.email ,B.mail_status ,";
-			$query = $query."  B.correstaf ,A.urgency ,B.correcont ,B.contact, B.question";
+			$query = $query."  B.correstaf ,B.urgency ,B.contact, B.question";
 			$query = $query."  FROM php_rice_mail B ";
 			$query = $query."  LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum ";
 			$query = $query."  WHERE B.mail_idxnum = $g_idxnum";
@@ -357,7 +357,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 				<table class="tbh" id= "TBL">
 					<tr>
 						<td class="tbd_td_p1_l">
-							<select class="form-gray" id="status" name="状態" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
+							<select class="form-gray" id="status" name="状態" onchange="Change_Sql(<?php echo $row['mail_idxnum'] ?>)">
 								<option>状態</option>
 								<option value="0" <?php if($row['status'] == SYS_STATUS_0) echo 'selected'; ?>>未連絡</option>
 								<option value="2" <?php if($row['status'] == SYS_STATUS_2) echo 'selected'; ?>>対応中</option>
@@ -365,7 +365,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 								<option value="9" <?php if($row['status'] == SYS_STATUS_9) echo 'selected'; ?>>完了</option>
 								<option value="3" <?php if($row['status'] == SYS_STATUS_3) echo 'selected'; ?>>返信有</option>
 							</select>
-							<select class="form-gray" id="urgency" name="緊急度" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
+							<select class="form-gray" id="urgency" name="緊急度" onchange="Change_Sql(<?php echo $row['mail_idxnum'] ?>)">
 								<option>緊急度</option>
 								<option <?php if($row['urgency'] === '火急') echo 'selected'; ?>>火急</option>
 								<option <?php if($row['urgency'] === '早急') echo 'selected'; ?>>早急</option>
@@ -373,14 +373,14 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 							</select>
 						</td>
 						<td class = "tbd_td_p1_r">
-							<p>No.<?php echo $row['idxnum'] ?></p>
+							<p>No.<?php echo $row['mail_idxnum'] ?></p>
 						</td>
 					</tr>
 				</table>
 				<table class="tbh" id= "TBL">
 					<tr>
 						<td class ="tbd_td_p3_l">
-							<h2>名前：<?php echo $row['name'] ?>（<?php echo $row['ruby'] ?>）</h2>
+							<h2>名前：<?php echo $row['name']; ?><? if($row['ruby'] != ""){echo "（". $row['ruby']."）";} ?></h2>
 							
 						</td>
 						<td class ="tbd_td_p3_c">
@@ -468,14 +468,14 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					<th class="tbd_th_main_c" COLSPAN = "5">
 					</th>
 					<th class="tbd_th_main_c">
-						<a href="javascript:Push_Reply(<?php echo $row['idxnum'] ?>)">
+						<a href="javascript:Push_Reply(<?php echo $row['mail_idxnum'] ?>)">
 							<div class="box">
 								<p>返信する</p>
 							</div>
 						</a>
 					</th>
 					<th class="tbd_th_main_c">
-						<a href="javascript:Push_Coment(<?php echo $row['idxnum'] ?>)">
+						<a href="javascript:Push_Coment(<?php echo $row['mail_idxnum'] ?>)">
 							<div class="box">
 								<p>コメントする</p>
 							</div>
@@ -515,75 +515,16 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			<hr>
 			<?php
 			}
-			//----- データ抽出
-			$query = "";
-			$query = $query."  SELECT A.insdt, A.upddt, A.updcount, A.idxnum, A.mail_idx, A.detail_idx,";
-			$query = $query."  A.name, A.email, A.correstaf, A.category, A.subject, A.contents, A.file";
-			$query = $query."  FROM php_rice_mail_detail A";
-			$query = $query."  WHERE A.mail_idxnum = $g_idxnum";
-			$query = $query."  ORDER BY A.mail_idx DESC";
-			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
-			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-			if (!($rs = $db->query($query))) {
-				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-			}
 			?>
-			<hr class="mail">
-				<table class="tbm">
-					<tr>
-						<th class="tbd_th_main_r">
-							<p><?php echo $row['category'] ?></p>
-						</th>
-						<th class="tbd_th_main_l" COLSPAN = "4">
-							<?php if($row['category'] == "メール受信"){ ?>
-								<p><strong><?php echo $row['name'] ?></strong>＜<?php echo $row['email'] ?>＞</p>
-							<?php }else{ ?>
-								<p>担当：<?php echo $row['correstaf'] ?></p>
-							<?php } ?>
-						</th>
-						<th class="tbd_th_main_r" >
-							<p><?php echo  date("Y/n/j H:i", strtotime($row['insdt'])) ?></p>
-							<p><a href="javascript:Push_Edit(<?php echo $row['idxnum'] ?>,<?php echo $row['mail_idx'] ?>)">編集</a>　<a href="javascript:Push_Delete(<?php echo $row['idxnum'] ?>,<?php echo $row['mail_idx'] ?>)">削除</a></p>
-						</th>
-					</tr>
-					<?php if($row['subject'] != ""){ ?>
-					<tr>
-						<td class="tbd_td_main_l">
-						</td>
-						<td class="tbd_td_main_l" COLSPAN = "5">
-							件名：<?php echo $row['subject'] ?>
-						</td>
-					</tr>
-					<?php } ?>
-					<?php if($row['file'] <> ""){
-						$p_filename = mb_substr($row['file'],11);?>
-					<tr>
-						<td class="tbd_td_main_l">
-						</td>
-						<td class="tbd_td_main_l" COLSPAN = "5">
-							添付ファイル：<a href="<?php echo $row['file'] ?>" target="_blank"><?php echo $p_filename ?></a>
-						</td>
-					</tr>
-					<?php } ?>
-					<tr>
-						<td class="tbd_td_main_l">
-						</td>
-						<td class="tbd_td_main_l" COLSPAN = "5">
-							<pre>
-<?php echo $row['contents'] ?>
-							</pre>
-						</td>
-					</tr>
-				</table>
-			</hr>
+
 		<?php
 			//----- データ抽出
 			$query = "";
-			$query = $query."  SELECT B.insdt, B.upddt, B.updcount, B.idxnum, B.mail_idx, B.detail_idx,";
+			$query = $query."  SELECT B.insdt, B.upddt, B.mail_idxnum, B.detail_idxnum,";
 			$query = $query."  B.name, B.email, B.correstaf, B.category, B.subject, B.contents, B.file";
-			$query = $query."  FROM php_info_mail_detail B";
+			$query = $query."  FROM php_rice_mail_detail B";
 			$query = $query."  WHERE B.mail_idxnum = $g_idxnum";
-			$query = $query."  ORDER BY B.mail_idx DESC";
+			$query = $query."  ORDER BY B.mail_idxnum DESC";
 			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 			if (!($rs = $db->query($query))) {
@@ -609,7 +550,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						</th>
 						<th class="tbd_th_main_r" >
 							<p><?php echo  date("Y/n/j H:i", strtotime($row['insdt'])) ?></p>
-							<p><a href="javascript:Push_Edit(<?php echo $row['idxnum'] ?>,<?php echo $row['mail_idx'] ?>)">編集</a>　<a href="javascript:Push_Delete(<?php echo $row['idxnum'] ?>,<?php echo $row['mail_idx'] ?>)">削除</a></p>
+							<p><a href="javascript:Push_Edit(<?php echo $row['detail_idxnum'] ?>)">編集</a>　<a href="javascript:Push_Delete(<?php echo $row['detail_idxnum'] ?>)">削除</a></p>
 						</th>
 					</tr>
 					<?php if($row['subject'] != ""){ ?>
@@ -645,9 +586,10 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			<table class="tbm">
 				<?php	
 					$query = "";
-					$query = $query."  SELECT A.insdt, A.name, A.email, A.question";
-					$query = $query."  FROM php_rice_mail A";
-					$query = $query."  WHERE A.mail_idxnum = $g_idxnum";
+					$query = $query."  SELECT A.insdt, A.name, A.email, B.question";
+					$query = $query."  FROM php_rice_mail B";
+					$query = $query."  LEFT OUTER JOIN php_rice_personal_info A ON B.personal_idxnum=A.idxnum";
+					$query = $query."  WHERE B.mail_idxnum = $g_idxnum";
 					$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 					$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 					if (!($rs = $db->query($query))) {
@@ -663,7 +605,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						<p><strong><?php echo $row['name'] ?></strong>＜<?php echo $row['email'] ?>＞</p>
 					</th>
 					<th class="tbd_th_main_r" COLSPAN = "2">
-						<p><?php echo $row['insdt'] ?></p>
+						<p><?php echo date('Y/n/j H:i:s',strtotime($row['insdt'])); ?></p>
 					</th>
 				</tr>
 				<tr>

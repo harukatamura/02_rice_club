@@ -565,50 +565,6 @@
 					require_once(dirname(_FILE_).'/codmail_error_mail.php');
 					return false;
 				}
-				//インデックス取得
-				$mail_idx_ = mysqli_insert_id($db);
-				//初期値設定
-				$m_query1 = "";
-				$m_query2 = "";
-				$m_query1 .= " INSERT INTO ".$table_md;
-				$m_query1 .= " ( ";
-				$m_query2 .= " VALUES ( ";
-				//登録日時
-				$m_query1 .= $collist_md["登録日時"];
-				$m_query2 .= sprintf("'%s'", $today);
-				//更新日時
-				$m_query1 .= "," . $collist_md["更新日時"];
-				$m_query2 .= sprintf(",'%s'", $today);
-				//インデックス
-				$m_query1 .= "," . $collist_md["個人情報インデックス"];
-				$m_query2 .= sprintf(",'%s'", $g_idx);
-				$m_query1 .= "," . $collist_md["問合インデックス"];
-				$m_query2 .= sprintf(",'%s'", $mail_idx_);
-				//内容
-				$m_query1 .= "," . $collist_md["お名前"];
-				$m_query2 .= sprintf(",'%s'", $name);
-				$m_query1 .= "," . $collist_md["メールアドレス"];
-				$m_query2 .= sprintf(",'%s'", $email);
-				$m_query1 .= "," . $collist_md["メール内容"];
-				$m_query2 .= sprintf(",'%s'", $remarks);
-				$m_query1 .= "," . $collist_md["受信/送信/コメント"];
-				$m_query2 .= sprintf(",'%s'", "メール受信");
-				$m_query1 .= "," . $collist_md["備考"];
-				$m_query2 .= sprintf(",'%s'", "注文時備考");
-				$m_query1 .= ")";
-				$m_query2 .= ")";
-				//DBに登録
-				$_insert_md = "";
-				$_insert_md = $m_query1.$m_query2;
-				$comm->ouputlog("===データ更新ＳＱＬ===", $_insert_md, SYS_LOG_TYPE_DBUG);
-				$comm->ouputlog($_insert_md, $prgid, SYS_LOG_TYPE_DBUG);
-				//データ追加実行
-				if (!($rs = $db->query($_insert_md))) {
-					$comm->ouputlog("☆★☆データ更新エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-					require_once(dirname(_FILE_).'/codmail_error_mail.php');
-					return false;
-				}
-			
 			}
 		
 		}else{
