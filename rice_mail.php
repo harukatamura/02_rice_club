@@ -137,11 +137,11 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 	$p_sendlist[][0] = "島村";
 
 	//対応中件数の取得
-		$sta02 = $db->query("SELECT COUNT(*) AS num_sta02 FROM php_rice_mail A WHERE (status = '3' || status = '2') AND delflg=0");
+		$sta02 = $db->query("SELECT COUNT(*) AS num_sta02 FROM php_rice_mail A WHERE mail_status IN ('2', '3') AND delflg=0");
 		$row_sta02 = $sta02->fetch_assoc();
 	
 	//未連絡件数の取得
-		$sta00 = $db->query("SELECT COUNT(*) AS num_sta00 FROM php_rice_mail A WHERE status = '0' AND delflg=0");
+		$sta00 = $db->query("SELECT COUNT(*) AS num_sta00 FROM php_rice_mail A WHERE mail_status = '0' AND delflg=0");
 		$row_sta00 = $sta00->fetch_assoc();
 		
 	//対応状況の絞り込み
@@ -164,23 +164,23 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 	$search_idx = "";
 	if(isset($_POST['検索'])){
 		if(!isset($_POST['未連絡'])){
-			$status .= " AND A.status <> 0";
+			$status .= " AND E.mail_status <> 0";
 			$chk00 = 0;
 		}
 		if(!isset($_POST['対応中'])){
-			$status .= " AND A.status <> 2";
+			$status .= " AND E.mail_status <> 2";
 			$chk02 = 0;
 		}
 		if(!isset($_POST['確認待'])){
-			$status .= " AND A.status <> 8";
+			$status .= " AND E.mail_status <> 8";
 			$chk08 = 0;
 		}
 		if(!isset($_POST['完了'])){
-			$status .= " AND A.status <> 9";
+			$status .= " AND E.mail_status <> 9";
 			$chk09 = 0;
 		}
 		if(!isset($_POST['返信有'])){
-			$status .= " AND A.status <> 3";
+			$status .= " AND E.mail_status <> 3";
 			$chk03 = 0;
 		}
 		if(isset($_POST['検索名前'])){
@@ -282,23 +282,23 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		$search_staff = $_COOKIE['search_staff'];
 		$search_idx = $_COOKIE['search_idx'];
 		if($chk00==0){
-			$status .= " AND A.status <> 0";
+			$status .= " AND E.mail_status <> 0";
 		}
 		if($chk02==0){
-			$status .= " AND A.status <> 2";
+			$status .= " AND E.mail_status <> 2";
 		}
 		if($chk09==0){
-			$status .= " AND A.status <> 9";
+			$status .= " AND E.mail_status <> 9";
 		}
 		if($chk08==0){
-			$status .= " AND A.status <> 8";
+			$status .= " AND E.mail_status <> 8";
 		}
 		if($chk03==0){
-			$status .= " AND A.status <> 3";
+			$status .= " AND E.mail_status <> 3";
 		}
 	}else{
-		$status = " AND A.status <>9";
-		$status .= " AND A.status <>8";
+		$status = " AND E.mail_status <>9";
+		$status .= " AND E.mail_status <>8";
 		$chk08 = 0;
 		$chk09 = 0;
 		$search_name = "";
@@ -333,7 +333,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 <!--sweetalert2-->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
 
-  <title>infoメールお問い合わせ一覧</title>
+  <title>精米倶楽部メールお問い合わせ一覧</title>
   
   <!-- cascading style seet-->
   <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
@@ -572,7 +572,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			} else {
 				$.ajax({
 					type: "POST"
-					, url: "./infomail_check_sql.php"
+					, url: "./rice_mail_check_sql.php"
 					, data: {
 						"idx":idx
 					}
@@ -591,17 +591,17 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					}
 					if ( status_err_flg == 1) {
 						alert('ステータスが変更されています\n現在のステータスを確認してください。');
-						location.href = './info_mail.php';
+						location.href = './rice_mail.php';
 					} else if ( staff_err_flg == 1 ) {
 						staff_check = confirm('登録されている職員と異なる職員が設定されようとしています\nよろしいですか？');
 						if ( staff_check == true ) {
-							document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
+							document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 							document.forms['frm'].submit();
 						} else {
-							location.href = './info_mail.php';
+							location.href = './rice_mail.php';
 						}
 					} else {
-						document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
+						document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 						document.forms['frm'].submit();
 					}
 				});
@@ -610,7 +610,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		//コメント登録
 		function Push_jyokyo(idx){
 			var rowINX = 'do=ins&idxnum='+idx;
-			window.open('./info_mail_form.php?' + rowINX);
+			window.open('./rice_mail_form.php?' + rowINX);
 		}
 		//詳細ページにジャンプ
 		function mailDetail(idx) {
@@ -619,7 +619,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			var staff = document.getElementById('correstaf' + idx).value;
 //			if (status != 0 && staff != "未選択" || c_staff == "松本" || c_staff == "田村") {
 			if (status != 0 && staff != "未選択") {
-				window.open ( "./info_mail_detail.php?"+ rowINX, "_blank", "width=1600, height=1200, scrollbars=yes" );
+				window.open ( "./rice_mail_detail.php?"+ rowINX, "_blank", "width=1600, height=1200, scrollbars=yes" );
 			} else {
 				document.forms['frm'].reset();
 			    	//アラート表示
@@ -657,7 +657,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 <body>
 	<div id="container">
 		<div id="header">
-			<br><h2>infoお問い合わせ一覧</h2>
+			<br><h2>精米倶楽部お問い合わせ一覧</h2>
 	  <!-- 項目①
 	  ================================================== -->
 			<br>
@@ -668,15 +668,15 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		</div>
 		<div id="main">
 			<br>
-			<form name="search" method="post" action="./info_mail.php">
+			<form name="search" method="post" action="./rice_mail.php">
+				<div id="checkwait">
+					<input type="button" class="search" OnClick="window.open('./mail_list.php')" value="メーリス送信"><br>
+				</div>
 				<? if($p_compcd <> "T"){ ?>
 					<div id="checkwait">
-						<input type="button" class="search" OnClick="window.open('./info_mail_checklist.php')" value="確認待ちリスト"><br>
+						<input type="button" class="search" OnClick="window.open('./rice_mail_checklist.php')" value="確認待ちリスト"><br>
 					</div>
 				<? } ?>
-				<div id="checkwait">
-					<input type="button" class="search" OnClick="window.open('./info_mail_input.php')" value="新規登録"><br>
-				</div>
 				<div id="search">
 					<input type="button" class="search" OnClick="Javascript:Show_Search()" value="絞り込み🔎"><br>
 					<div id="search_detail" <? if($check == 0){ ?>style="display:none;"<? } ?>>
@@ -791,22 +791,22 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 				<?php
 					//----- データ抽出
 					$query = "";
-					$query .= " SELECT A.idxnum, A.updcount, A.name, B.insdt, B.upddt, A.ruby, A.company";
+					$query .= " SELECT E.mail_idxnum, A.updcount, A.name, E.insdt, E.upddt, A.ruby, A.company";
 					$query .= " , A.address1, A.phonenum1, A.email, E.mail_status, E.correstaf, E.urgency ";
 					$query .= " , D.category, D.contents, D.remarks, E.question";
 					$query .= " FROM php_rice_mail E";
 					$query .= " left outer join php_rice_personal_info A ON A.idxnum=E.personal_idxnum ";
 					$query .= " left outer join";
-					$query .= " (SELECT B.category, B.contents, B.detail_idx, B.idxnum, B.remarks";
+					$query .= " (SELECT B.category, B.contents, B.detail_idxnum, B.mail_idxnum, B.remarks";
 					$query .= " FROM php_rice_mail_detail B";
 					$query .= " INNER JOIN(";
-					$query .= " SELECT idxnum, MAX(detail_idx) as max_detail_idx";
+					$query .= " SELECT mail_idxnum, MAX(detail_idxnum) as max_detail_idxnum";
 					$query .= " FROM php_rice_mail_detail ";
-					$query .= " GROUP BY idxnum ) as C";
-					$query .= " ON B.idxnum= C.idxnum";
-					$query .= " AND B.detail_idx = C.max_detail_idx) as D";
-					$query .= " ON A.idxnum = D.idxnum";
-					$query .= " WHERE DATE(A.insdt) = '$today'";
+					$query .= " GROUP BY mail_idxnum ) as C";
+					$query .= " ON B.mail_idxnum= C.mail_idxnum";
+					$query .= " AND B.detail_idxnum = C.max_detail_idxnum) as D";
+					$query .= " ON E.mail_idxnum = D.mail_idxnum";
+					$query .= " WHERE DATE(E.insdt) = '$today'";
 					if($g_search_name <> ""){
 						$query .= " AND A.name collate utf8_unicode_ci LIKE '%".$search_name."%'";
 					}if($g_search_ruby <> ""){
@@ -818,32 +818,32 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					}if($search_staff <> "未選択" && $search_staff <> ""){
 						$query .= " AND A.correstaf = '".$search_staff."'";
 					}if($search_idx <> ""){
-						$query .= " AND A.idxnum = ".$search_idx;
+						$query .= " AND E.mail_idxnum = ".$search_idx;
 					}if($search_date <> 0){
 						$query .= " AND DATE(A.upddt)= '".date('Y-m-d', strtotime($search_date))."'";
 					}if($search_q_date1 <> 0){
-						$query .= " AND DATE(A.insdt)>= '".date('Y-m-d', strtotime($search_q_date1))."'";
+						$query .= " AND DATE(E.insdt)>= '".date('Y-m-d', strtotime($search_q_date1))."'";
 					}if($search_q_date2 <> 0){
-						$query .= " AND DATE(A.insdt)<= '".date('Y-m-d', strtotime($search_q_date2))."'";
+						$query .= " AND DATE(E.insdt)<= '".date('Y-m-d', strtotime($search_q_date2))."'";
 					}
 					$query .= " AND A.delflg =0";
 					$query .= $status;
-					$query .= " UNION ALL SELECT A.idxnum, A.updcount, A.name, A.insdt, A.upddt, A.ruby, A.company";
+					$query .= " UNION ALL SELECT E.mail_idxnum, A.updcount, A.name, E.insdt, A.upddt, A.ruby, A.company";
 					$query .= " , A.address1, A.phonenum1, A.email, E.mail_status, E.correstaf, E.urgency ";
 					$query .= " , D.category, D.contents, D.remarks, E.question";
 					$query .= " FROM php_rice_mail E";
 					$query .= " left outer join php_rice_personal_info A ON A.idxnum=E.personal_idxnum ";
 					$query .= " left outer join";
-					$query .= " (SELECT B.category, B.contents, B.detail_idx, B.idxnum, B.remarks";
+					$query .= " (SELECT B.category, B.contents, B.detail_idxnum, B.mail_idxnum, B.remarks";
 					$query .= " FROM php_rice_mail_detail B";
 					$query .= " INNER JOIN(";
-					$query .= " SELECT idxnum, MAX(detail_idx) as max_detail_idx";
+					$query .= " SELECT mail_idxnum, MAX(detail_idxnum) as max_detail_idxnum";
 					$query .= " FROM php_rice_mail_detail ";
-					$query .= " GROUP BY idxnum ) as C";
-					$query .= " ON B.idxnum= C.idxnum";
-					$query .= " AND B.detail_idx = C.max_detail_idx) as D";
-					$query .= " ON A.idxnum = D.idxnum";
-					$query .= " WHERE  DATE(A.insdt)< '$today' ";
+					$query .= " GROUP BY mail_idxnum ) as C";
+					$query .= " ON B.mail_idxnum= C.mail_idxnum";
+					$query .= " AND B.detail_idxnum = C.max_detail_idxnum) as D";
+					$query .= " ON E.mail_idxnum = D.mail_idxnum";
+					$query .= " WHERE  DATE(E.insdt)< '$today' ";
 					if($search_name <> ""){
 						$query .= " AND A.name collate utf8_unicode_ci LIKE '%".$search_name."%'";
 					}if($search_ruby <> ""){
@@ -855,17 +855,17 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					}if($search_staff <> "未選択" && $search_staff <> ""){
 						$query .= " AND A.correstaf = '".$search_staff."'";
 					}if($search_idx <> ""){
-						$query .= " AND A.idxnum = ".$search_idx;
+						$query .= " AND E.mail_idxnum = ".$search_idx;
 					}if($search_date <> 0){
 						$query .= " AND DATE(A.upddt)= '".date('Y-m-d', strtotime($search_date))."'";
 					}if($search_q_date1 <> 0){
-						$query .= " AND DATE(A.insdt)>= '".date('Y-m-d', strtotime($search_q_date1))."'";
+						$query .= " AND DATE(E.insdt)>= '".date('Y-m-d', strtotime($search_q_date1))."'";
 					}if($search_q_date2 <> 0){
-						$query .= " AND DATE(A.insdt)<= '".date('Y-m-d', strtotime($search_q_date2))."'";
+						$query .= " AND DATE(E.insdt)<= '".date('Y-m-d', strtotime($search_q_date2))."'";
 					}
 					$query .= $status;
 					$query .= " AND A.delflg =0";
-					$query .= " ORDER BY status='3' DESC, upddt DESC, idxnum DESC ";
+					$query .= " ORDER BY mail_status='3' DESC, upddt DESC, mail_idxnum DESC ";
 					$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 					$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 					if (!($rs = $db->query($query))) {
@@ -899,16 +899,16 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					}
 				?>>
 					<td class="tbd_td_p1">
-						<a href="Javascript:mailDetail(<?php echo $row['idxnum'] ?>)"><?php echo $row['idxnum'] ?></a>
+						<a href="Javascript:mailDetail(<?php echo $row['mail_idxnum'] ?>)"><?php echo $row['mail_idxnum'] ?></a>
 					</td>
 					<td style="display:none;">
 						<?php echo $row['updcount'] ?>
 					</td>
 					<td style="display:none;">
-						<input type="hidden" id="old_status<?php echo $row['idxnum'] ?>" value="<?php echo $row['mail_status'] ?>">
+						<input type="hidden" id="old_status<?php echo $row['mail_idxnum'] ?>" value="<?php echo $row['mail_status'] ?>">
 					</td>
 					<td class="tbd_td_p1">
-						<select name="状態<?php echo $row['idxnum'] ?>" id="status<?php echo $row['idxnum'] ?>" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
+						<select name="状態<?php echo $row['mail_idxnum'] ?>" id="status<?php echo $row['mail_idxnum'] ?>" onchange="Change_Sql(<?php echo $row['mail_idxnum'] ?>)">
 							<option value="0" <?php if($row['mail_status'] == SYS_STATUS_0) echo 'selected'; ?>>未連絡</option>
 							<option value="2" <?php if($row['mail_status'] == SYS_STATUS_2) echo 'selected'; ?>>対応中</option>
 							<option value="8" <?php if($row['mail_status'] == SYS_STATUS_8) echo 'selected'; ?>>確認待</option>
@@ -931,7 +931,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						<?php echo mb_substr($row['question'],0,6,'UTF-8') ?>
 					</td>
 					<td class="tbd_td_p1">
-						<select name="担当者<?php echo $row['idxnum'] ?>" id="correstaf<?php echo $row['idxnum'] ?>" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
+						<select name="担当者<?php echo $row['mail_idxnum'] ?>" id="correstaf<?php echo $row['mail_idxnum'] ?>" onchange="Change_Sql(<?php echo $row['mail_idxnum'] ?>)">
 							<?php
 								foreach($p_sendlist as $list) {
 									if ($row['correstaf'] =="" &&  $list[0] == "未選択" || $row['correstaf'] == $list[0]) {
@@ -944,7 +944,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						</select>
 					</td>
 					<td class="tbd_td_p1">
-						<select  name="緊急度<?php echo $row['idxnum'] ?>" id="urgency<?php echo $row['idxnum'] ?>" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
+						<select  name="緊急度<?php echo $row['mail_idxnum'] ?>" id="urgency<?php echo $row['mail_idxnum'] ?>" onchange="Change_Sql(<?php echo $row['mail_idxnum'] ?>)">
 							<option value="">未選択</option>
 							<option <?php if($row['urgency'] === '火急') echo 'selected'; ?>>火急</option>
 							<option <?php if($row['urgency'] === '早急') echo 'selected'; ?>>早急</option>
@@ -952,7 +952,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						</select>
 					</td>
 					<td>
-						<a href="javascript:Push_jyokyo(<?php echo $row['idxnum'] ?>)">追記<img src="images/pen.png" alt="pen"></a>
+						<a href="javascript:Push_jyokyo(<?php echo $row['mail_idxnum'] ?>)">追記<img src="images/pen.png" alt="pen"></a>
 						<div class="correcont_td">
 							<?php
 								if($row['category'] == 'コメント'){
