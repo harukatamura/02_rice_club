@@ -259,8 +259,8 @@
 			if ($('#name').val() != '') {
 				change_back_true('name');
 			}
-			if ($('#mailaddress').val() != '') {
-				change_back_true('mailaddress');
+			if ($('#email').val() != '') {
+				change_back_true('email');
 			}
 			if ($('#phonenum1').val() != '') {
 				change_back_true('phonenum1');
@@ -474,12 +474,12 @@
 					}
 				}
 			);
-			$('#mailaddress').on(
+			$('#email').on(
 				'input', function() {
-					if ($('#mailaddress').val() != '') {
-						change_back_true('mailaddress');
+					if ($('#email').val() != '') {
+						change_back_true('email');
 					} else {
-						change_back_false('mailaddress');
+						change_back_false('email');
 					}
 				}
 			);
@@ -629,7 +629,7 @@
 			let postcode2 = $('#postcode2').val();
 			let address1 = $('#address1').val();
 			let address2 = $('#address2').val();
-			let email = $('#mailaddress').val();
+			let email = $('#email').val();
 			let submit_punc = '';
 			let submit_swal = '';
 			// 必須項目未入力ならエラー表示
@@ -720,7 +720,7 @@
 						//データを取得
 						$query = "
 							 SELECT A.idxnum, A.name, A.address1, A.address2, A.address3, A.postcd1, A.postcd2, A.phonenum1, A.phonenum2
-							 , A.mailaddress, B.remarks, A.receipt, A.ruby
+							 , A.email, B.remarks, A.receipt, A.ruby
 							 , B.category, B.weight, B.tanka as s_tanka, B.date_s, B.date_e
 							 FROM php_rice_subscription B
 							 LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum 
@@ -778,7 +778,7 @@
 										<div class="form-group">
 											<img src="./images/hisu.gif" alt="必須" >
 											<label>メールアドレス</label>
-											<input type="text" id="mailaddress" name="メールアドレス" value="<?php echo $row['mailaddress'] ?>" class="form-control required_form">
+											<input type="text" id="email" name="メールアドレス" value="<?php echo $row['email'] ?>" class="form-control required_form">
 										</div>
 									</div>
 									<br><br><br><br>

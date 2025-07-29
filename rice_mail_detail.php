@@ -1,10 +1,7 @@
 <?php
 //==================================================================================================
 // ■機能概要
-//   ・infoお問い合わせ詳細
-//
-// ■履歴
-//   2019.06 バージョン更新対応 (PHP5.4.16 → PHP7.0.33)	K.Mizutani
+//   ・精米倶楽部お問い合わせ詳細
 //==================================================================================================
 //----------------------------------------------------------------------------------------------
 // 初期処理
@@ -33,8 +30,8 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 
 	//実行プログラム名取得
 	$prgid = str_replace(".php","",basename($_SERVER['PHP_SELF']));
-	$prgname = "infoお問い合わせ詳細";
-	$prgmemo = "　infoお問い合わせの詳細情報を確認をすることが可能です。。";
+	$prgname = "精米倶楽部お問い合わせ詳細";
+	$prgmemo = "　精米倶楽部お問い合わせの詳細情報を確認できます。";
 	$comm->ouputlog("==== " . $prgname . " 処理開始 ====", $prgid, SYS_LOG_TYPE_INFO);
 
 	//データベース接続
@@ -324,16 +321,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 				document.forms['frm'].submit();
 			}
 		}
-		//法人に引き継ぎ
-		function Copy_business(idx){
-			var rowINX = 'do=copy_business&idxnum='+idx;
-			//確認ダイアログの表示
-			if(window.confirm('法人に引き継ぎますか？')){
-				//OKのときは実行
-				document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
-				document.forms['frm'].submit();
-			}
-		}
 		//返品登録
 		function henpin_toroku(idx) {
 			var rowINX = 'i_idx=' + idx;
@@ -353,23 +340,18 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		<?php
 			//----- データ抽出
 			$query = "";
-			$query = $query."  SELECT A.idxnum ,A.updcount,A.name ,A.insdt ,A.upddt ,A.ruby ,A.company,";
-			$query = $query."  A.address1 ,A.address2 ,A.postcd1 ,A.postcd2 ,A.phonenum ,A.email ,A.status ,";
-			$query = $query."  A.correstaf ,A.question ,A.urgency ,A.kind ,A.kind_detail ,A.correcont ,A.contact";
-			$query = $query."  , A.buydt, A.baddt";
-			$query = $query."  FROM php_info_mail A ";
-			$query = $query."  WHERE A.idxnum = $g_idxnum";
+			$query = $query."  SELECT B.mail_idxnum as idxnum ,A.name ,A.insdt ,A.upddt ,A.ruby ,A.company,";
+			$query = $query."  A.address1 ,A.address2 ,A.postcd1 ,A.postcd2 ,A.phonenum1 ,A.email ,B.mail_status ,";
+			$query = $query."  B.correstaf ,A.urgency ,B.correcont ,B.contact, B.question";
+			$query = $query."  FROM php_rice_mail B ";
+			$query = $query."  LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum ";
+			$query = $query."  WHERE B.mail_idxnum = $g_idxnum";
 			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 			if (!($rs = $db->query($query))) {
 				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 			}
 			while ($row = $rs->fetch_array()) {
-				if($row['kind'] == "操作方法"){
-					$kind_detail_list = array('JMBOOK', 'WPS設定', 'クレーム', 'ネット設定', 'プリンタ設定', 'メール設定', '不具合', '付属品', '初期設定', '問い合わせ', '基本操作', '検査・修理', '返品' );
-				}
-				$phonenum = $row['phonenum'];
-				$email = $row['email'];
 		?>
 			<form name="frm" method = "post">
 				<table class="tbh" id= "TBL">
@@ -389,33 +371,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 								<option <?php if($row['urgency'] === '早急') echo 'selected'; ?>>早急</option>
 								<option <?php if($row['urgency'] === '普通') echo 'selected'; ?>>普通</option>
 							</select>
-							<select class="form-gray" id="state" name="内容" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
-								<option>内容</option>
-								<option <?php if($row['kind'] === '会場案内') echo 'selected'; ?>>会場案内</option>
-								<option <?php if($row['kind'] === '購入案内') echo 'selected'; ?>>購入案内</option>
-								<option <?php if($row['kind'] === '操作方法') echo 'selected'; ?>>操作方法</option>
-								<option <?php if($row['kind'] === '修理') echo 'selected'; ?>>修理</option>
-								<option <?php if($row['kind'] === '返品') echo 'selected'; ?>>返品</option>
-								<option <?php if($row['kind'] === 'クレーム') echo 'selected'; ?>>クレーム</option>
-							</select>
-							<select class="form-gray" id="state" name="種別詳細" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
-								<option>種別詳細</option>
-								<? for($i=0; $i<count($kind_detail_list); ++$i){ ?>
-									<option <?php if($row['kind_detail'] == $kind_detail_list[$i]){echo "selected='selected'";} ?>><? echo $kind_detail_list[$i] ?></option>
-								<? } ?>
-							</select>
-						</td>
-						<td class = "tbd_td_p1_r">
-							<a href="./info_mail_hikitugi.php?idxnum=<?php echo $row['idxnum'] ?>" class="btn-flat-border"> 引継登録へ </a>
-						</td>
-						<td class = "tbd_td_p1_r">
-							<a href="javascript:Copy_business(<?php echo $row['idxnum'] ?>)" class="btn-flat-border">  法人に引継 </a>
-						</td>
-						<td class = "tbd_td_p1_r">
-							<a href="javascript:henpin_toroku(<?php echo $row['idxnum'] ?>)" class="btn-flat-border">返品登録</a>
-						</td>
-						<td class = "tbd_td_p1_r">
-							<a href="javascript:huryou_toroku(<?php echo $row['idxnum'] ?>)" class="btn-flat-border">初期不良登録</a>
 						</td>
 						<td class = "tbd_td_p1_r">
 							<p>No.<?php echo $row['idxnum'] ?></p>
@@ -425,7 +380,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 				<table class="tbh" id= "TBL">
 					<tr>
 						<td class ="tbd_td_p3_l">
-							<h2>名前：<?php echo $row['name'] ?>（<?php echo $row['ruby'] ?>）<a href="info_mail_input.php?idxnum=<? echo $row['idxnum']; ?>" target="_blank">✎</a></h2>
+							<h2>名前：<?php echo $row['name'] ?>（<?php echo $row['ruby'] ?>）</h2>
 							
 						</td>
 						<td class ="tbd_td_p3_c">
@@ -484,7 +439,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 							<p>TEL：</p>
 						</th>
 						<td class = "tbd_td_p2_l">
-							<p><?php echo $row['phonenum'] ?></p>
+							<p><?php echo $row['phonenum1'] ?></p>
 						</td>
 						<th class = "tbd_th_p2_h">
 						</th>
@@ -498,28 +453,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 							<p><?php echo $row['correstaf'] ?></p>
 						</td>
 					</tr>
-					<tr>
-						<th class = "tbd_th_p2_h">
-							<p>譲渡時期：</p>
-						</th>
-						<td class = "tbd_td_p2_l">
-							<p><?php echo $row['buydt'] ?></p>
-						</td>
-						<th class = "tbd_th_p2_h">
-							<p>不具合時期：</p>
-						</th>
-						<td class = "tbd_td_p2_l">
-							<p><?php echo $row['baddt'] ?></p>
-						</td>
-						<th class = "tbd_th_p2_h">
-						</th>
-						<td class = "tbd_td_p2_l">
-						</td>
-						<th class = "tbd_th_p2_h">
-						</th>
-						<td class = "tbd_td_p2_l">
-						</td>
-					</tr>
 				</table>
 				<br>
 			</form>
@@ -528,7 +461,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			<table class="tbh">
 				<tr>
 					<th class="tbd_th_main_c" COLSPAN = "7">
-						<p style="color:red">※電話や引継で対応した場合は、コメントでログを残してください。※</p>
+						<p style="color:red">※電話で対応した場合は、コメントでログを残してください。※</p>
 					</th>
 				</tr>
 				<tr>
@@ -586,15 +519,12 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			$query = "";
 			$query = $query."  SELECT A.insdt, A.upddt, A.updcount, A.idxnum, A.mail_idx, A.detail_idx,";
 			$query = $query."  A.name, A.email, A.correstaf, A.category, A.subject, A.contents, A.file";
-			$query = $query."  FROM php_info_mail_detail A";
-			$query = $query."  WHERE A.idxnum = $g_idxnum";
+			$query = $query."  FROM php_rice_mail_detail A";
+			$query = $query."  WHERE A.mail_idxnum = $g_idxnum";
 			$query = $query."  ORDER BY A.mail_idx DESC";
 			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-// ----- 2019.06 ver7.0対応
-//			if (! $rs = mysql_query($query, $db)) {
 			if (!($rs = $db->query($query))) {
-//				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . mysql_errno($db) . ": " . mysql_error($db), $prgid, SYS_LOG_TYPE_ERR);
 				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 			}
 			?>
@@ -652,19 +582,14 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			$query = $query."  SELECT B.insdt, B.upddt, B.updcount, B.idxnum, B.mail_idx, B.detail_idx,";
 			$query = $query."  B.name, B.email, B.correstaf, B.category, B.subject, B.contents, B.file";
 			$query = $query."  FROM php_info_mail_detail B";
-			$query = $query."  WHERE B.idxnum = $g_idxnum";
+			$query = $query."  WHERE B.mail_idxnum = $g_idxnum";
 			$query = $query."  ORDER BY B.mail_idx DESC";
 			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-// ----- 2019.06 ver7.0対応
-//			if (! $rs = mysql_query($query, $db)) {
 			if (!($rs = $db->query($query))) {
-//				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . mysql_errno($db) . ": " . mysql_error($db), $prgid, SYS_LOG_TYPE_ERR);
 				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 			}
 			$i = 0;
-// ----- 2019.06 ver7.0対応
-//			while ($row = @mysql_fetch_array($rs)) {
 			while ($row = $rs->fetch_array()) {
 				$i++;
 				
@@ -721,18 +646,13 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 				<?php	
 					$query = "";
 					$query = $query."  SELECT A.insdt, A.name, A.email, A.question";
-					$query = $query."  FROM php_info_mail A";
-					$query = $query."  WHERE A.idxnum = $g_idxnum";
+					$query = $query."  FROM php_rice_mail A";
+					$query = $query."  WHERE A.mail_idxnum = $g_idxnum";
 					$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 					$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-// ----- 2019.06 ver7.0対応
-//					if (! $rs = mysql_query($query, $db)) {
 					if (!($rs = $db->query($query))) {
-//						$comm->ouputlog("☆★☆データ追加エラー☆★☆  " . mysql_errno($db) . ": " . mysql_error($db), $prgid, SYS_LOG_TYPE_ERR);
 						$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 					}
-// ----- 2019.06 ver7.0対応
-//					while ($row = @mysql_fetch_array($rs)) {
 					while ($row = $rs->fetch_array()) {
 				?>
 				<tr>

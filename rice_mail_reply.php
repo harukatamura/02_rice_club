@@ -1,9 +1,6 @@
 <?php
 //----------------------------------------------------------------------------------------------
 // 共通処理
-//
-// ■履歴
-//   2019.06 バージョン更新対応 (PHP5.4.16 → PHP7.0.33)	K.Mizutani　【対応不要】
 //----------------------------------------------------------------------------------------------
 //ファイル読込
 require_once("./lib/comm.php");
@@ -42,17 +39,17 @@ $g_idxnum=$_GET['idxnum'];
 		
 		mb_language("Japanese");
 		mb_internal_encoding("UTF-8");
-		$from_name = "JEMTCインフォメーションセンター";
-		$from_addr = "leveragefuturesp@jemtc.info";
-		$smtp_user = "leveragefuturesp@jemtc.info";
-		$smtp_password = "3tqbTiKSrsUbiCnH9i";
+		$from_name = "精米倶楽部インフォメーションセンター";
+		$from_addr = "kome@jemtcnet.jp";
+		$smtp_user = "kome@jemtcnet.jp";
+		$smtp_password = "DhbKXqrF2Yzb";
 		
 		$mail = new PHPMailer();
 		$mail->IsSMTP();
 		$mail->SMTPDebug = 0; 
 		$mail->SMTPAuth = true;
 		$mail->CharSet = 'utf-8';
-		$mail->Host = "smtp.alpha-prm.jp";
+		$mail->Host = "sv2039.xserver.jp";
 		$mail->Port = 587;
 		$mail->IsHTML(false);
 		$mail->Username = $smtp_user;
@@ -73,7 +70,7 @@ $g_idxnum=$_GET['idxnum'];
 			$mail_result .= "Mailer Error: " . $mailer->ErrorInfo;
 		}else {
 			$mail_result =  "メールの送信が完了しました。";
-			header("Location:./info_mail_form.php?finish=send&idxnum=".$g_idxnum);
+			header("Location:./rice_mail_form.php?finish=send&idxnum=".$g_idxnum);
 		}
 	?>
 	

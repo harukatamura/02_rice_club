@@ -1,12 +1,8 @@
 <?
-
-//----------------------------------------------------------------------------------------------
-// 共通処理
-//
-// ■履歴
-//   2019.06 バージョン更新対応 (PHP5.4.16 → PHP7.0.33)	K.Mizutani
-//----------------------------------------------------------------------------------------------
-
+//==================================================================================================
+// ■機能概要
+//   ・精米倶楽部問い合わせメール返信フォーム
+//==================================================================================================
 //----------------------------------------------------------------------------------------------
 // 初期処理
 //----------------------------------------------------------------------------------------------
@@ -21,7 +17,7 @@ require_once("./lib/comm.php");
 require_once("./lib/define.php");
 require_once("./lib/dbaccess.php");
 require_once("./lib/html.php");
-	//タイムゾーン
+//タイムゾーン
 date_default_timezone_set('Asia/Tokyo');
 
 //オブジェクト生成
@@ -31,8 +27,8 @@ $dba = new dbaccess();
 
 //実行プログラム名取得
 $prgid = str_replace(".php","",basename($_SERVER['PHP_SELF']));
-$prgname = "問い合わせメール返信フォーム";
-$prgmemo = "　問い合わせメールの返信を行います";
+$prgname = "精米倶楽部問い合わせメール返信フォーム";
+$prgmemo = "　精米倶楽部問い合わせメールの返信を行います";
 $comm->ouputlog("==== " . $prgname . " 処理開始 ====", $prgid, SYS_LOG_TYPE_INFO);
 
 //データベース接続
@@ -43,20 +39,8 @@ $result = $dba->mysql_con($db);
 $g_staff = $_COOKIE['con_perf_staff'];
 $p_compcd = $_COOKIE['con_perf_compcd'];
 $g_finish = $_GET['finish'];
-if($p_compcd <> "T"){
-	if($g_staff == "木村（ま）"){
-		$s_staff = "木村";
-	}else if($g_staff == "鈴木（純）"){
-		$s_staff = "鈴木";
-	}else{
-		$s_staff = $_COOKIE['con_perf_staff'];
-	}
-}else{
-	$s_staff = "畑中";
-}
-?>
+$s_staff = $_COOKIE['con_perf_staff'];
 
-<?
 //id取得
 $g_idxnum=$_GET['idxnum'];
 $g_mail_idx=$_GET['mail_idx'];
@@ -243,7 +227,7 @@ $g_mail_idx=$_GET['mail_idx'];
 				alert('内容を入力してください。');
 			}else{
 				var rowINX = 'do=inscontents&idxnum='+idx;
-				document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
+				document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 				document.forms['frm'].submit();
 			}
 		}
@@ -255,7 +239,7 @@ $g_mail_idx=$_GET['mail_idx'];
 				alert('内容を入力してください。');
 			}else{
 				var rowINX = 'do=editcontents&idxnum='+idx+'&mail_idx='+m_idx;
-				document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
+				document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 				document.forms['frm'].submit();
 			}
 		}
@@ -270,7 +254,7 @@ $g_mail_idx=$_GET['mail_idx'];
 			}else{
 				var rowINX = 'do=check&idxnum='+idx;
 				if(window.confirm('確認画面に移行します')){
-					document.forms['frm'].action = './info_mail_form.php?' + rowINX;
+					document.forms['frm'].action = './rice_mail_form.php?' + rowINX;
 					document.forms['frm'].submit();
 				}
 			}
@@ -279,20 +263,20 @@ $g_mail_idx=$_GET['mail_idx'];
 		function Mail_Reply(idx){
 			var rowINX = 'do=reply&idxnum='+idx;
 			if(window.confirm('メールを送信しますか？')){
-				document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
+				document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 				document.forms['frm'].submit();
 			}
 		}
 		function Mail_Redo(idx){
 			if(window.confirm('編集画面に戻りますか？')){
-				document.forms['frm'].action = './info_mail_form.php?do=redo&idxnum='+idx;
+				document.forms['frm'].action = './rice_mail_form.php?do=redo&idxnum='+idx;
 				document.forms['frm'].submit();
 			}
 		}
 		//状態変更
 		function Change_Sql(idx){
 			var rowINX = 'do=change_send&idxnum='+idx;
-			document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
+			document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 			document.forms['frm'].submit();
 		}
 	</script>
@@ -304,7 +288,7 @@ $g_mail_idx=$_GET['mail_idx'];
 	?>
 		<script type="text/javascript">
 			localStorage.setItem('mail_check_flg', 1);
-			window.opener.location.href = './info_mail_checklist.php';
+			window.opener.location.href = './rice_mail_checklist.php';
 			close();
 		</script>
 	<?
@@ -312,7 +296,7 @@ $g_mail_idx=$_GET['mail_idx'];
 	?>
 		<script type="text/javascript">
 			localStorage.setItem('mail_check_before_flg', 1);
-			window.opener.location.href = './info_mail.php';
+			window.opener.location.href = './rice_mail.php';
 			close();
 		</script>
 	<?
@@ -322,11 +306,12 @@ $g_mail_idx=$_GET['mail_idx'];
 		<?
 		//----- データ抽出
 		$query = "";
-		$query .= " SELECT A.idxnum ,A.updcount,A.name ,A.insdt ,A.upddt ,A.ruby ,A.company,";
-		$query .= " A.address1 ,A.address2 ,A.postcd1 ,A.postcd2 ,A.phonenum ,A.email ,A.status ,";
-		$query .= " A.correstaf ,A.contact";
-		$query .= " FROM php_info_mail A ";
-		$query .= " WHERE A.idxnum = $g_idxnum";
+		$query .= " SELECT A.idxnum ,A.name ,A.insdt ,A.upddt ,A.ruby ,A.company,";
+		$query .= " A.address1 ,A.address2 ,A.postcd1 ,A.postcd2 ,A.phonenum1 ,A.email ,B.mail_status ,";
+		$query .= " B.correstaf ,B.contact";
+		$query .= " FROM php_rice_mail B ";
+		$query .= " LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum ";
+		$query .= " WHERE B.mail_idxnum = $g_idxnum";
 		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 		if (!($rs = $db->query($query))) {
@@ -395,7 +380,7 @@ $g_mail_idx=$_GET['mail_idx'];
 						<p>TEL：</p>
 					</th>
 					<td class = "tbd_td_p2_l">
-						<p><? echo $row['phonenum'] ?></p>
+						<p><? echo $row['phonenum1'] ?></p>
 					</td>
 					<th class = "tbd_th_p2_h">
 					</th>
@@ -417,19 +402,14 @@ $g_mail_idx=$_GET['mail_idx'];
 			<?
 			if($_GET['do'] =="ins"){
 				$query = "";
-				$query .= "SELECT A.correcont, email, name, company ";
-				$query .= " FROM php_info_mail A ";
+				$query .= "SELECT A.email, A.name, A.company ";
+				$query .= " FROM php_rice_personal_info A ";
 				$query .= " WHERE idxnum = $g_idxnum";
 				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-// ----- 2019.06 ver7.0対応
-//				if (! $rs = mysql_query($query, $db)) {
 				if (!($rs = $db->query($query))) {
-//					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . mysql_errno($db) . ": " . mysql_error($db), $prgid, SYS_LOG_TYPE_ERR);
 					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 				}
-// ----- 2019.06 ver7.0対応
-//				while ($row = @mysql_fetch_array($rs)) {
 				while ($row = $rs->fetch_array()) {?>
 					<div class="row">
 						<h1>コメント入力</h1>
@@ -468,18 +448,13 @@ $g_mail_idx=$_GET['mail_idx'];
 			}else if($_GET['do'] == "edit"){
 				$query = "";
 				$query .= "SELECT B.category, B.contents";
-				$query .= " FROM php_info_mail_detail B ";
-				$query .= " WHERE idxnum = $g_idxnum AND mail_idx=$g_mail_idx";
+				$query .= " FROM php_rice_mail_detail B ";
+				$query .= " WHERE mail_idxnum = $g_idxnum AND detail_idx=$g_mail_idx";
 				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-// ----- 2019.06 ver7.0対応
-//				if (! $rs = mysql_query($query, $db)) {
 				if (!($rs = $db->query($query))) {
-//					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . mysql_errno($db) . ": " . mysql_error($db), $prgid, SYS_LOG_TYPE_ERR);
 					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 				}
-// ----- 2019.06 ver7.0対応
-//				while ($row = @mysql_fetch_array($rs)) {
 				while ($row = $rs->fetch_array()) {?>
 					<div class="row">
 						<h1>コメント入力</h1>
@@ -518,8 +493,8 @@ $g_mail_idx=$_GET['mail_idx'];
 			}else if($_GET['do'] == "reply"){
 				//過去のメールの引用
 				$query = "SELECT A.insdt, A.category, A.contents, A.email, A.checkflg, A.file";
-				$query .= " FROM php_info_mail_detail A ";
-				$query .= " WHERE A.idxnum = $g_idxnum";
+				$query .= " FROM php_rice_mail_detail A ";
+				$query .= " WHERE A.mail_idxnum = $g_idxnum";
 				$query .= " AND A.category LIKE 'メール__'";
 				$query .= " AND A.delflg = 0";
 				$query .= " ORDER BY A.insdt DESC ";
@@ -554,7 +529,7 @@ $g_mail_idx=$_GET['mail_idx'];
 				//テンプレート抽出
 				$query = "";
 				$query .= "SELECT A.title, A.contents, A.idxnum ";
-				$query .= " FROM php_info_mail_tmp A ";
+				$query .= " FROM php_rice_mail_tmp A ";
 				$query .= " WHERE A.delflg=0 ";
 				$query .= " ORDER BY A.idxnum ";
 				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
@@ -567,23 +542,19 @@ $g_mail_idx=$_GET['mail_idx'];
 					$arr_temp_contents[$row['title']] = $row['contents'];
 				}
 				$query = "";
-				$query .= "SELECT A.correcont, A.email, A.name, A.company, A.question, A.company, A.status";
-				$query .= " FROM php_info_mail A ";
-				$query .= " WHERE A.idxnum = $g_idxnum";
+				$query .= "SELECT A.email, A.name, A.company, A.company, B.mail_status";
+				$query .= " FROM php_rice_mail B ";
+				$query .= " LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum ";
+				$query .= " WHERE B.mail_idxnum = $g_idxnum";
 				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-// ----- 2019.06 ver7.0対応
-//				if (! $rs = mysql_query($query, $db)) {
 				if (!($rs = $db->query($query))) {
-//					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . mysql_errno($db) . ": " . mysql_error($db), $prgid, SYS_LOG_TYPE_ERR);
 					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 				}
-// ----- 2019.06 ver7.0対応
-//				while ($row = @mysql_fetch_array($rs)) {
 				while ($row = $rs->fetch_array()) {
 					//返信定型文
 					$phrase = $row['name'] . "　様\n\n";
-					$phrase .= "この度はJEMTCへお問い合わせいただき誠にありがとうございます。\n";
+					$phrase .= "この度は精米倶楽部についてのお問い合わせいただき誠にありがとうございます。\n";
 					$phrase .= "お問合せについて回答させていただきます、JEMTCの" . $s_staff . "と申します。\n";
 					$phrase .= "\n";
 					$phrase .= "＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝\n";
@@ -595,12 +566,9 @@ $g_mail_idx=$_GET['mail_idx'];
 					$phrase2 .= "本メールに返信する形で送信お願い致します。\n";
 					$sign = "\n";
 					$sign .= "──────────────────────\n";
-					$sign .= "日本電子機器補修協会\n";
-					$sign .= "　〒461-0011\n";
-					$sign .= "　名古屋市東区白壁3-12-13\n";
-					$sign .= "　中部産業連盟ビル　新館　4階\n";
-					$sign .= "　TEL：052-936-8887\n";
-					$sign .= "　URL: https://jemtc.jp/\n";
+					$sign .= "日本電子機器補修協会　主食共同購入部\n";
+					$sign .= "　TEL：050-5272-9665\n";
+					$sign .= "　URL: https://jemtcnet.jp/kome/\n";
 					$sign .= "──────────────────────\n";
 					?>
 					<div class="row">
@@ -618,17 +586,7 @@ $g_mail_idx=$_GET['mail_idx'];
 									<input type="text" name="email" id="email" style="width:100%; font-size:12px;" value="<? echo $row['email'] ?>"></input>
 								</td>
 							</tr>
-<!--						<tr>
-								<th class="tbd_th_l">
-									<br><p>Cc</p>
-								</th>
-							</tr>
 							<tr>
-								<td class="tbd_tb_l">
-									<input type="text" name="Cc" style="width:100%; font-size:12px;"></input>
-								</td>
-							</tr>
--->							<tr>
 								<th class="tbd_th_l">
 									<p>タイトル</p>
 								</th>
@@ -735,9 +693,9 @@ $g_mail_idx=$_GET['mail_idx'];
 			}else if($_GET['do'] == "redo"){
 				//----- データ抽出
 				$query = "";
-				$query .= " SELECT A.status";
-				$query .= " FROM php_info_mail A ";
-				$query .= " WHERE A.idxnum = $g_idxnum";
+				$query .= " SELECT A.mail_status";
+				$query .= " FROM php_rice_mail A ";
+				$query .= " WHERE A.mail_idxnum = $g_idxnum";
 				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 				if (!($rs = $db->query($query))) {
@@ -836,9 +794,9 @@ $g_mail_idx=$_GET['mail_idx'];
 			} else if($_GET['do'] == "check") { 
 				//----- データ抽出
 				$query = "";
-				$query .= " SELECT A.status";
-				$query .= " FROM php_info_mail A ";
-				$query .= " WHERE A.idxnum = $g_idxnum";
+				$query .= " SELECT A.mail_status";
+				$query .= " FROM php_rice_mail A ";
+				$query .= " WHERE A.mail_idxnum = $g_idxnum";
 				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 				if (!($rs = $db->query($query))) {

@@ -3,9 +3,6 @@
 //=========================================================================================
 // ■機能概要
 //   ・infoメール受信→SQLへデータを格納
-//
-// ■履歴
-//   2019.06 バージョン更新対応 (PHP5.4.16 → PHP7.0.33)	K.Mizutani
 //=========================================================================================
 
 	error_reporting(0);
@@ -31,8 +28,8 @@
 	$Referer_check_domain = "forincs.com";
 	
 	//対象テーブル
-	$table = "php_info_mail";
-	$table_detail = "php_info_mail_detail";
+	$table = "php_rice_mail";
+	$table_detail = "php_rice_mail_detail";
 
 	//本日日付
 	$today = date('YmdHis');
@@ -209,24 +206,6 @@
 			}
 		}
 		
-		//同じインデックスのデータが有るか確認
-		$query = "SELECT MAX(mail_idx) as max_mail_idx FROM  " . $table_detail . "  WHERE idxnum = '".$m_idxnum."'";
-		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-		if (!($rs = $db->query($query))) {
-			$comm->ouputlog("☆★☆データ取得エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-			require_once(dirname(_FILE_).'/infomail_error_mail.php');
-		}else {
-			//あればメールIDを＋１にする
-			if ($rs->num_rows > 0) {
-				while ($row = $rs->fetch_array()) {
-					$max_mail_idx = $row['max_mail_idx'];
-					$m_mail_idx = $max_mail_idx + 1;
-				}
-			}
-		}
-		//詳細インデックス
-		$m_detail_idx = $m_idxnum . "-" . $m_mail_idx;
-		
 		//メールにNGワードが入っている場合、置換する
 		/*
 		$body = str_replace("'", "", $body);
@@ -272,9 +251,9 @@
 
 		//データ更新
 		$_insert = "INSERT INTO " . $table_detail;
-		$_insert .= " (insdt, upddt, corredt, idxnum, mail_idx, detail_idx, ";
+		$_insert .= " (insdt, upddt, corredt,  mail_idx,  ";
 		$_insert .= " email, name, category, subject, contents)";
-		$_insert .= " VALUE ('$recdate', '$today', '$today', '$m_idxnum', '$m_mail_idx', '$m_detail_idx', ";
+		$_insert .= " VALUE ('$recdate', '$today', '$today', '$m_idxnum', ";
 		$_insert .= " '$email', '$name', 'メール受信', '$subject', '$body' )";
 		$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 		$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);

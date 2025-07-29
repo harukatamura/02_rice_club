@@ -135,14 +135,13 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		$p_sendlist[][0] = $row['staff'];
 	}
 	$p_sendlist[][0] = "島村";
-	$p_sendlist[][0] = "ジェネシス";
 
 	//対応中件数の取得
-		$sta02 = $db->query("SELECT COUNT(*) AS num_sta02 FROM php_info_mail A WHERE (status = '3' || status = '2') AND delflg=0");
+		$sta02 = $db->query("SELECT COUNT(*) AS num_sta02 FROM php_rice_mail A WHERE (status = '3' || status = '2') AND delflg=0");
 		$row_sta02 = $sta02->fetch_assoc();
 	
 	//未連絡件数の取得
-		$sta00 = $db->query("SELECT COUNT(*) AS num_sta00 FROM php_info_mail A WHERE status = '0' AND delflg=0");
+		$sta00 = $db->query("SELECT COUNT(*) AS num_sta00 FROM php_rice_mail A WHERE status = '0' AND delflg=0");
 		$row_sta00 = $sta00->fetch_assoc();
 		
 	//対応状況の絞り込み
@@ -652,13 +651,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			document.forms['search'].elements[content1].value = 0;
 			document.forms['search'].elements[content2].value = 0;
 		}
-		// 連絡不通ボタン
-		function tabsence_sql(idx){
-			//画面項目設定
- 			var rowINX = 'do=tabsence&idxnum='+idx;
-			document.forms['frm'].action = './info_mail_sql.php?' + rowINX;
-			document.forms['frm'].submit();
-		}
 	</script> 
 
 </head>
@@ -799,13 +791,13 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 				<?php
 					//----- データ抽出
 					$query = "";
-					$query .= " SELECT A.idxnum, A.updcount, A.name, A.insdt, A.upddt, A.ruby, A.company, A.address1";
-					$query .= " , A.phonenum, A.email, A.status, A.correstaf, A.question, A.urgency, A.kind, A.kind_detail";
-					$query .= " , D.category, D.contents";
-					$query .= " FROM php_rice_personal_info A";
-					$query .= " left outer join php_rice_mail E ON A.idxnum=E.personal_idxnum ";
+					$query .= " SELECT A.idxnum, A.updcount, A.name, B.insdt, B.upddt, A.ruby, A.company";
+					$query .= " , A.address1, A.phonenum1, A.email, E.mail_status, E.correstaf, E.urgency ";
+					$query .= " , D.category, D.contents, D.remarks, E.question";
+					$query .= " FROM php_rice_mail E";
+					$query .= " left outer join php_rice_personal_info A ON A.idxnum=E.personal_idxnum ";
 					$query .= " left outer join";
-					$query .= " (SELECT B.category, B.contents, B.detail_idx, B.idxnum";
+					$query .= " (SELECT B.category, B.contents, B.detail_idx, B.idxnum, B.remarks";
 					$query .= " FROM php_rice_mail_detail B";
 					$query .= " INNER JOIN(";
 					$query .= " SELECT idxnum, MAX(detail_idx) as max_detail_idx";
@@ -837,12 +829,12 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					$query .= " AND A.delflg =0";
 					$query .= $status;
 					$query .= " UNION ALL SELECT A.idxnum, A.updcount, A.name, A.insdt, A.upddt, A.ruby, A.company";
-					$query .= " , A.address1, A.phonenum, A.email, A.status, A.correstaf, A.question, A.urgency, A.kind, A.kind_detail";
-					$query .= " , D.category, D.contents";
-					$query .= " FROM php_rice_personal_info A";
-					$query .= " left outer join php_rice_mail E ON A.idxnum=E.personal_idxnum ";
+					$query .= " , A.address1, A.phonenum1, A.email, E.mail_status, E.correstaf, E.urgency ";
+					$query .= " , D.category, D.contents, D.remarks, E.question";
+					$query .= " FROM php_rice_mail E";
+					$query .= " left outer join php_rice_personal_info A ON A.idxnum=E.personal_idxnum ";
 					$query .= " left outer join";
-					$query .= " (SELECT B.category, B.contents, B.detail_idx, B.idxnum";
+					$query .= " (SELECT B.category, B.contents, B.detail_idx, B.idxnum, B.remarks";
 					$query .= " FROM php_rice_mail_detail B";
 					$query .= " INNER JOIN(";
 					$query .= " SELECT idxnum, MAX(detail_idx) as max_detail_idx";
@@ -882,27 +874,24 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					$i = 0;
 					$category = "";
 					while ($row = $rs->fetch_array()) {
-					if($row['kind'] == "操作方法"){
-						$kind_detail_list = array('JMBOOK', 'WPS設定', 'クレーム', 'ネット設定', 'プリンタ設定', 'メール設定', '不具合', '付属品', '初期設定', '問い合わせ', '基本操作', '検査・修理', '返品' );
-					}
 					$i++;
 				?>
 				<tbody>
 				<tr
 				<?php 
-					if ($row['status'] != SYS_STATUS_9 and $row['upddt'] <= $weekago) {
+					if ($row['mail_status'] != SYS_STATUS_9 and $row['upddt'] <= $weekago) {
 						echo 'class="danger"'; 
 					}
-					else if ($row['status'] == SYS_STATUS_0){
+					else if ($row['mail_status'] == SYS_STATUS_0){
 						echo 'class="sta00"';
 					}
-					else if ($row['status'] == SYS_STATUS_3){
+					else if ($row['mail_status'] == SYS_STATUS_3){
 						echo 'class="sta03"';
 					}
-					else if ($row['status'] == SYS_STATUS_8){
+					else if ($row['mail_status'] == SYS_STATUS_8){
 						echo 'class="sta08"';
 					}
-					else if ($row['status'] == SYS_STATUS_9){
+					else if ($row['mail_status'] == SYS_STATUS_9){
 						echo 'class="sta09"';
 					}
 					else{
@@ -916,15 +905,15 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						<?php echo $row['updcount'] ?>
 					</td>
 					<td style="display:none;">
-						<input type="hidden" id="old_status<?php echo $row['idxnum'] ?>" value="<?php echo $row['status'] ?>">
+						<input type="hidden" id="old_status<?php echo $row['idxnum'] ?>" value="<?php echo $row['mail_status'] ?>">
 					</td>
 					<td class="tbd_td_p1">
 						<select name="状態<?php echo $row['idxnum'] ?>" id="status<?php echo $row['idxnum'] ?>" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
-							<option value="0" <?php if($row['status'] == SYS_STATUS_0) echo 'selected'; ?>>未連絡</option>
-							<option value="2" <?php if($row['status'] == SYS_STATUS_2) echo 'selected'; ?>>対応中</option>
-							<option value="8" <?php if($row['status'] == SYS_STATUS_8) echo 'selected'; ?>>確認待</option>
-							<option value="9" <?php if($row['status'] == SYS_STATUS_9) echo 'selected'; ?>>完了</option>
-							<option value="3" <?php if($row['status'] == SYS_STATUS_3) echo 'selected'; ?>>返信有</option>
+							<option value="0" <?php if($row['mail_status'] == SYS_STATUS_0) echo 'selected'; ?>>未連絡</option>
+							<option value="2" <?php if($row['mail_status'] == SYS_STATUS_2) echo 'selected'; ?>>対応中</option>
+							<option value="8" <?php if($row['mail_status'] == SYS_STATUS_8) echo 'selected'; ?>>確認待</option>
+							<option value="9" <?php if($row['mail_status'] == SYS_STATUS_9) echo 'selected'; ?>>完了</option>
+							<option value="3" <?php if($row['mail_status'] == SYS_STATUS_3) echo 'selected'; ?>>返信有</option>
 						</select>
 					</td>
 					<td class="tbd_td_p1">
@@ -962,37 +951,19 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 							<option <?php if($row['urgency'] === '普通') echo 'selected'; ?>>普通</option>
 						</select>
 					</td>
-					<td class="tbd_td_p1">
-						<select  name="内容<?php echo $row['idxnum'] ?>" id="kind<?php echo $row['idxnum'] ?>" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
-							<option value="">未選択</option>
-							<option <?php if($row['kind'] === '会場案内') echo 'selected'; ?>>会場案内</option>
-							<option <?php if($row['kind'] === '購入案内') echo 'selected'; ?>>購入案内</option>
-							<option <?php if($row['kind'] === '操作方法') echo 'selected'; ?>>操作方法</option>
-							<option <?php if($row['kind'] === '修理') echo 'selected'; ?>>修理</option>
-							<option <?php if($row['kind'] === '返品') echo 'selected'; ?>>返品</option>
-							<option <?php if($row['kind'] === 'クレーム') echo 'selected'; ?>>クレーム</option>
-						</select>
-						<select class="form-gray" id="state" name="種別詳細<?php echo $row['idxnum'] ?>" onchange="Change_Sql(<?php echo $row['idxnum'] ?>)">
-							<option value="">未選択</option>
-							<? for($i=0; $i<count($kind_detail_list); ++$i){ ?>
-								<option <?php if($row['kind_detail'] == $kind_detail_list[$i]){echo "selected='selected'";} ?>><? echo $kind_detail_list[$i] ?></option>
-							<? } ?>
-						</select>
-					</td>
 					<td>
 						<a href="javascript:Push_jyokyo(<?php echo $row['idxnum'] ?>)">追記<img src="images/pen.png" alt="pen"></a>
 						<div class="correcont_td">
 							<?php
 								if($row['category'] == 'コメント'){
 									echo $row['contents'];
+								}else if($row['remarks'] <> ""){
+									echo $row['remarks'];
 								}else{
 									echo $row['category'];
 								}
 							?>
 						</div>
-					</td>
-					<td>
-						<center><button type="button" class="btn-infos btn-borders d" onclick="tabsence_sql(<?php echo $row['idxnum'] ?>);">不通</button></center>
 					</td>
 				</tr>
 				<?php } ?>
