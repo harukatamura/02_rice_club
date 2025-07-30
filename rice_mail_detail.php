@@ -307,13 +307,13 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		}
 		
 		//編集ボタンクリック
-		function Push_Edit(idx,m_idx){
-			var rowINX = 'do=edit&idxnum='+idx+'&mail_idx='+m_idx;
+		function Push_Edit(idx,detail_idx){
+			var rowINX = 'do=edit&idxnum='+idx+'&mail_idx='+detail_idx;
 			window.open('./rice_mail_form.php?' + rowINX);
 		}
 		//削除ボタンクリック
-		function Push_Delete(idx,m_idx){
-			var rowINX = 'do=delete&idxnum='+idx+'&mail_idx='+m_idx;
+		function Push_Delete(idx,detail_idx){
+			var rowINX = 'do=delete&idxnum='+idx+'&mail_idx='+detail_idx;
 			//確認ダイアログの表示
 			if(window.confirm('削除しますか？')){
 				//OKのときは実行
@@ -359,11 +359,11 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						<td class="tbd_td_p1_l">
 							<select class="form-gray" id="status" name="状態" onchange="Change_Sql(<?php echo $row['mail_idxnum'] ?>)">
 								<option>状態</option>
-								<option value="0" <?php if($row['status'] == SYS_STATUS_0) echo 'selected'; ?>>未連絡</option>
-								<option value="2" <?php if($row['status'] == SYS_STATUS_2) echo 'selected'; ?>>対応中</option>
-								<option value="8" <?php if($row['status'] == SYS_STATUS_8) echo 'selected'; ?>>確認待</option>
-								<option value="9" <?php if($row['status'] == SYS_STATUS_9) echo 'selected'; ?>>完了</option>
-								<option value="3" <?php if($row['status'] == SYS_STATUS_3) echo 'selected'; ?>>返信有</option>
+								<option value="0" <?php if($row['mail_status'] == SYS_STATUS_0) echo 'selected'; ?>>未連絡</option>
+								<option value="2" <?php if($row['mail_status'] == SYS_STATUS_2) echo 'selected'; ?>>対応中</option>
+								<option value="8" <?php if($row['mail_status'] == SYS_STATUS_8) echo 'selected'; ?>>確認待</option>
+								<option value="9" <?php if($row['mail_status'] == SYS_STATUS_9) echo 'selected'; ?>>完了</option>
+								<option value="3" <?php if($row['mail_status'] == SYS_STATUS_3) echo 'selected'; ?>>返信有</option>
 							</select>
 							<select class="form-gray" id="urgency" name="緊急度" onchange="Change_Sql(<?php echo $row['mail_idxnum'] ?>)">
 								<option>緊急度</option>
@@ -524,7 +524,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			$query = $query."  B.name, B.email, B.correstaf, B.category, B.subject, B.contents, B.file";
 			$query = $query."  FROM php_rice_mail_detail B";
 			$query = $query."  WHERE B.mail_idxnum = $g_idxnum";
-			$query = $query."  ORDER BY B.mail_idxnum DESC";
+			$query = $query."  ORDER BY B.detail_idxnum DESC";
 			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 			if (!($rs = $db->query($query))) {
@@ -550,7 +550,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						</th>
 						<th class="tbd_th_main_r" >
 							<p><?php echo  date("Y/n/j H:i", strtotime($row['insdt'])) ?></p>
-							<p><a href="javascript:Push_Edit(<?php echo $row['detail_idxnum'] ?>)">編集</a>　<a href="javascript:Push_Delete(<?php echo $row['detail_idxnum'] ?>)">削除</a></p>
+							<p><a href="javascript:Push_Edit(<?= $row['mail_idxnum']; ?>,<?php echo $row['detail_idxnum'] ?>)">編集</a>　<a href="javascript:Push_Delete(<?php echo $row['mail_idxnum'] ?>, <?php echo $row['detail_idxnum'] ?>)">削除</a></p>
 						</th>
 					</tr>
 					<?php if($row['subject'] != ""){ ?>

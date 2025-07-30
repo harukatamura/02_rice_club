@@ -321,7 +321,7 @@ $g_mail_idx=$_GET['mail_idx'];
 			<table class="tbh" id= "TBL">
 				<tr>
 					<td class ="tbd_td_p3_l">
-						<h2>名前：<? echo $row['name'] ?>（<? echo $row['ruby'] ?>）</h2>
+						<h2>名前：<? echo $row['name'] ?><? if($row['ruby'] <> ""){ echo "（".$row['ruby']."）";} ?></h2>
 						
 					</td>
 					<td class ="tbd_td_p3_c">
@@ -403,8 +403,9 @@ $g_mail_idx=$_GET['mail_idx'];
 			if($_GET['do'] =="ins"){
 				$query = "";
 				$query .= "SELECT A.email, A.name, A.company ";
-				$query .= " FROM php_rice_personal_info A ";
-				$query .= " WHERE idxnum = $g_idxnum";
+				$query .= " FROM php_rice_mail B ";
+				$query .= " LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum";
+				$query .= " WHERE B.mail_idxnum = $g_idxnum";
 				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 				if (!($rs = $db->query($query))) {
@@ -447,9 +448,11 @@ $g_mail_idx=$_GET['mail_idx'];
 				<? }
 			}else if($_GET['do'] == "edit"){
 				$query = "";
-				$query .= "SELECT B.category, B.contents";
+				$query .= "SELECT B.category, B.contents, A.email";
 				$query .= " FROM php_rice_mail_detail B ";
-				$query .= " WHERE mail_idxnum = $g_idxnum AND detail_idx=$g_mail_idx";
+				$query .= " LEFT OUTER JOIN php_rice_mail C ON B.mail_idxnum=C.mail_idxnum ";
+				$query .= " LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=C.personal_idxnum ";
+				$query .= " WHERE B.mail_idxnum = $g_idxnum AND B.detail_idxnum=$g_mail_idx";
 				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 				if (!($rs = $db->query($query))) {
@@ -655,14 +658,14 @@ $g_mail_idx=$_GET['mail_idx'];
 								<th class="tbd_th_l">
 									<br><p>添付ファイル</p>
 									<?php
-									if ($file != "" && $row['status'] == 8) { ?>
+									if ($file != "" && $row['mail_status'] == 8) { ?>
 										<a href="<? echo $file ?>" target="_blank"><? echo $filename ?></a></br>
 									<? } ?>
 								</th>
 							</tr>
 							<tr>
 								<td class="tbd_tb_l">
-									<? if($row['status'] == 8){ ?>
+									<? if($row['mail_status'] == 8){ ?>
 										変更がある場合は、次画面で「確認待ちへ」ボタンを押下してください。<br>
 									<? }else{ ?>
 										確認画面で添付してください。<br>
@@ -687,7 +690,7 @@ $g_mail_idx=$_GET['mail_idx'];
 						<input type="text" name="担当者" style="display:none;" value="<? echo $g_staff; ?>"></input>
 						<input type="text" name="名前" style="display:none;" value="<? echo $row['name']; ?>"></input>
 						<input type="text" name="法人名" style="display:none;" value="<? echo $row['company']; ?>"></input>
-						<? if ($file != "" && $row['status'] == 8) { ?>
+						<? if ($file != "" && $row['mail_status'] == 8) { ?>
 							<input type="text" name="アップロードファイル" style="display:none;" value="<? echo $file; ?>"></input>
 						<? } ?>
 					</div>
@@ -704,7 +707,7 @@ $g_mail_idx=$_GET['mail_idx'];
 					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 				}
 				while ($row = $rs->fetch_array()) {
-					$status = $row['status'];
+					$status = $row['mail_status'];
 				}
 				?>
 				<div class="row">
@@ -805,7 +808,7 @@ $g_mail_idx=$_GET['mail_idx'];
 					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 				}
 				while ($row = $rs->fetch_array()) {
-					$status = $row['status'];
+					$status = $row['mail_status'];
 				}
 				?>
 					<div class="row">

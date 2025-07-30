@@ -131,7 +131,6 @@ if ( $g_do == 'reply' || $g_do == 'change_send'){
 	$m_staff=$_POST['担当者'];
 	$m_email=$_POST['email'];
 	$m_name=$_POST['名前'];
-	$m_mail_idx=1;
 	//添付ファイルを保存
 	if ($_POST['アップロードファイル'] != "") {
 		$tmpfire = $_POST['アップロードファイル'];
@@ -378,7 +377,7 @@ function mysql_upd_rice_mail( $db) {
 	if($g_status > 7){
 		if($g_status  == 9){
 			//チェック完了の場合はデータ格納
-			$chk_done .= " ,chkstaff = ". sprintf("'%s'", $g_staff);
+			$chk_done .= " ,chkstaf = ". sprintf("'%s'", $g_staff);
 			$chk_done .= " , send_dt = " . sprintf("'%s'", date('YmdHis'));
 			$p_contents = "確認完了";
 		}elseif($g_status  == 8){
@@ -387,7 +386,7 @@ function mysql_upd_rice_mail( $db) {
 		
 		//データ更新
 		$_insert = "INSERT INTO " . $table_detail;
-		$_insert .= " (insdt, upddt, corredt, mail_idx,  ";
+		$_insert .= " (insdt, upddt, senddt, mail_idxnum,  ";
 		$_insert .= " email, name, correstaf, category, contents)";
 		$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum', ";
 		$_insert .= " '', '', '$g_staff', 'コメント', '$p_contents' )";
@@ -466,7 +465,7 @@ function mysql_upd_rice_mail_detail( $db) {
 		
 		//データ更新
 		$_insert = "INSERT INTO " . $table_detail;
-		$_insert .= " (insdt, upddt, corredt, mail_idx,  ";
+		$_insert .= " (insdt, upddt, senddt, mail_idxnum,  ";
 		$_insert .= " email, name, correstaf, category, contents)";
 		$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum', ";
 		$_insert .= " '', '', '$g_staff', 'コメント', '$p_contents' )";
@@ -543,9 +542,9 @@ function contents_ins( $db) {
 	
 	//データ更新
 	$_insert = "INSERT INTO " . $table_detail;
-	$_insert .= " (insdt, upddt, corredt, mail_idx,  ";
+	$_insert .= " (insdt, upddt, senddt, mail_idxnum,  ";
 	$_insert .= " email, name, correstaf, category, contents)";
-	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum' ";
+	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum', ";
 	$_insert .= " '$g_email', '$g_name', '$g_staff', '$g_category', '$g_contents' )";
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);
@@ -608,8 +607,8 @@ function contents_upd( $db) {
 	$_update .= " ,category   = ". sprintf("'%s'", $g_category);
 	$_update .= " ,contents = ". sprintf("'%s'", $g_contents);
 	$_update .= " ,correstaf = ". sprintf("'%s'", $g_staff);
-	$_update .= " WHERE idxnum = " . sprintf("'%s'", $g_idxnum);
-	$_update .= " AND mail_idx = " . sprintf("'%s'", $c_mail_idx);
+	$_update .= " WHERE mail_idxnum = " . sprintf("'%s'", $g_idxnum);
+	$_update .= " AND detail_idxnum = " . sprintf("'%s'", $c_mail_idx);
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
 	//データ追加実行
@@ -652,35 +651,15 @@ function mail_reply( $db) {
 	global $m_staff;
 	global $m_email;
 	global $m_name;
-	global $m_mail_idx;
 	global $m_file;
 	global $today;
 
 	$comm->ouputlog("mail_replyログ出力", $prgid, SYS_LOG_TYPE_DBUG);
 
-	//同じインデックス・メールIDのデータが有るか確認
-	$query = "SELECT MAX(detail_idxnum) as max_mail_idx FROM  " . $table_detail . " WHERE idxnum = '".$g_idxnum."'";
-	$comm->ouputlog("===データ抽出ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
-	$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-	if (!($rs = $db->query($query))) {echo "データ取得エラー";}
-	else {
-		while ($row = $rs->fetch_array()) {
-			$max_mail_idx = $row['max_mail_idx'];
-			//確認待ちメールを削除
-			$delete_idx = $g_idxnum. "-" . $max_mail_idx;
-			$delquery = "DELETE FROM " . $table_detail . " WHERE detail_idxnum = '".$max_mail_idx."' AND checkflg = 1";
-			$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
-			$comm->ouputlog($delquery, $prgid, SYS_LOG_TYPE_DBUG);
-			if (! $db->query($delquery)) {
-				$comm->ouputlog("☆★☆データ更新エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-				return false;
-			}
-		}
-	}
 	// ステータスを取得
-	$query = "  SELECT A.status";
+	$query = "  SELECT A.mail_status";
 	$query.= " FROM " . $table . " A ";
-	$query.= " WHERE A.idxnum = " . sprintf("'%s'", $g_idxnum);
+	$query.= " WHERE A.mail_idxnum = " . sprintf("'%s'", $g_idxnum);
 	$query .=" AND A.delflg = 0";
 	$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 	$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
@@ -688,7 +667,7 @@ function mail_reply( $db) {
 		$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 	}
 	while ($row = $rs->fetch_array()) {
-		$now_status = $row['status'];
+		$now_status = $row['mail_status'];
 	}
 	// エスケープ処理
 	if ($m_title != "") {
@@ -703,7 +682,7 @@ function mail_reply( $db) {
 
 	//データ更新
 	$_insert = "INSERT INTO " . $table_detail;
-	$_insert .= " (insdt, upddt, corredt, idxnum,  ";
+	$_insert .= " (insdt, upddt, senddt, mail_idxnum,  ";
 	$_insert .= " email, name, correstaf, category, subject, contents, file)";
 	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum',  ";
 	$_insert .= " '$m_email', '$m_name', '$m_staff', '$m_category', '$m_title', '$m_contents', '$m_file')";
@@ -765,8 +744,7 @@ function mysql_upd_rice_mail_delete( $db) {
 
 	//データ更新
 	$_detele = "DELETE FROM " . $table_detail;
-	$_detele .= " WHERE detail_idxnum = " . sprintf("'%s'", $g_idxnum);
-	$_detele .= " AND mail_idx = " . sprintf("'%s'", $g_detail_idx);
+	$_detele .= " WHERE detail_idxnum = " . sprintf("'%s'", $g_detail_idx);
 
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_detele, $prgid, SYS_LOG_TYPE_DBUG);
@@ -810,11 +788,10 @@ function mysql_change_send( $db) {
 	global $m_staff;
 	global $m_email;
 	global $m_name;
-	global $m_mail_idx;
 	global $m_file;
 	global $today;
 
-	$comm->ouputlog("mail_replyログ出力", $prgid, SYS_LOG_TYPE_DBUG);
+	$comm->ouputlog("mysql_change_sendログ出力", $prgid, SYS_LOG_TYPE_DBUG);
 
 	// エスケープ処理
 	if ($m_title != "") {
@@ -827,24 +804,9 @@ function mysql_change_send( $db) {
 		$m_name = addslashes($m_name);
 	}
 
-	//同じインデックス・メールIDのデータが有るか確認
-	$query = "SELECT idxnum,MAX(mail_idx) as max_mail_idx FROM  " . $table_detail . "  WHERE idxnum = '".$g_idxnum."'";
-	if (!($rs = $db->query($query))) {echo "データ取得エラー";}
-	else {
-		//あればメールIDを＋１にする
-		if ($rs->num_rows > 0) {
-			while ($row = $rs->fetch_array()) {
-				$max_mail_idx = $row['max_mail_idx'];
-				$m_mail_idx = $max_mail_idx + 1;
-				$comm->ouputlog("m_mail_idx=".$m_mail_idx, $prgid, SYS_LOG_TYPE_DBUG);
-			}
-		}
-	}
-	$m_detail_idx = $g_idxnum . "-" . $m_mail_idx;
-	
 	//データ更新
 	$_insert = "INSERT INTO " . $table_detail;
-	$_insert .= " (insdt, upddt, corredt,  mail_idx,  ";
+	$_insert .= " (insdt, upddt, senddt,  mail_idxnum,  ";
 	$_insert .= " email, name, correstaf, category, subject, contents, file, checkflg)";
 	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum',  ";
 	$_insert .= " '$m_email', '$m_name', '$m_staff', 'コメント', '', 'メール確認待登録', '', 0)";
@@ -855,13 +817,11 @@ function mysql_change_send( $db) {
 		$comm->ouputlog("☆★☆データ更新エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 		return false;
 	}
-	$m_mail_idx = $m_mail_idx + 1;
-	$m_detail_idx = $g_idxnum . "-" . $m_mail_idx;
 
 	$_insert = "INSERT INTO " . $table_detail;
-	$_insert .= " (insdt, upddt, corredt, idxnum, mail_idx, detail_idx, ";
+	$_insert .= " (insdt, upddt, senddt, mail_idxnum, ";
 	$_insert .= " email, name, correstaf, category, subject, contents, file, checkflg)";
-	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum', '$m_mail_idx', '$m_detail_idx',  ";
+	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum',  ";
 	$_insert .= " '$m_email', '$m_name', '$m_staff', '$m_category', '$m_title', '$m_contents', '$m_file', 1)";
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);
@@ -874,8 +834,8 @@ function mysql_change_send( $db) {
 	//お客様情報の最終更新時間をアップデート
 	$_update = "UPDATE " . $table;
 	$_update .= " SET upddt = " . sprintf("'%s'", date('YmdHis'));
-	$_update .= " ,status = 8";
-	$_update .= " WHERE idxnum = " . sprintf("'%s'", $g_idxnum);
+	$_update .= " ,mail_status = 8";
+	$_update .= " WHERE mail_idxnum = " . sprintf("'%s'", $g_idxnum);
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
 	//データ追加実行
@@ -946,7 +906,7 @@ function mysql_upd_mail_kokyaku( $db) {
 	$_update .= " SET upddt = " . sprintf("'%s'", date('YmdHis'));
 	$_update .= " ,updcount = updcount + 1";
 	$_update .= $query;
-	$_update .= " WHERE idxnum = " . sprintf("'%s'", $g_idxnum);
+	$_update .= " WHERE mail_idxnum = " . sprintf("'%s'", $g_idxnum);
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
 	//データ追加実行
