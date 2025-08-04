@@ -669,10 +669,10 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 		<div id="main">
 			<br>
 			<form name="search" method="post" action="./rice_mail.php">
-				<div id="checkwait">
-					<input type="button" class="search" OnClick="window.open('./mail_list.php')" value="メーリス送信"><br>
-				</div>
-				<? if($p_compcd <> "T"){ ?>
+				<? if($p_staff == "田村"){ ?>
+					<div id="checkwait">
+						<input type="button" class="search" OnClick="window.open('./mail_list.php')" value="メーリス送信"><br>
+					</div>
 					<div id="checkwait">
 						<input type="button" class="search" OnClick="window.open('./rice_mail_checklist.php')" value="確認待ちリスト"><br>
 					</div>

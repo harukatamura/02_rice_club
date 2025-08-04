@@ -529,10 +529,8 @@
 			if($remarks <> ""){
 				//テーブル名取得
 				$table_m = "php_rice_mail";
-				$table_md = "php_rice_mail_detail";
 				//テーブル項目取得
 				$collist_m = $dba->mysql_get_collist($db, $table_m);
-				$collist_md = $dba->mysql_get_collist($db, $table_md);
 				
 				//初期値設定
 				$m_query1 = "";
@@ -557,7 +555,7 @@
 				//DBに登録
 				$_insert_m = "";
 				$_insert_m = $m_query1.$m_query2;
-				$comm->ouputlog("===データ更新ＳＱＬ===", $_insert_m, SYS_LOG_TYPE_DBUG);
+				$comm->ouputlog($prgid, "===データ更新ＳＱＬ===", SYS_LOG_TYPE_DBUG);
 				$comm->ouputlog($_insert_m, $prgid, SYS_LOG_TYPE_DBUG);
 				//データ追加実行
 				if (!($rs = $db->query($_insert_m))) {

@@ -586,7 +586,7 @@
 			<div id="main">
 				<div id="formWrap">
 					<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
-						<p style="text-align:right"><a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a></p>
+						<p style="text-align:right"><a href="./rice_mail.php" class="btn-border-b">メール問合一覧</a>　<a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a></p>
 						<h2>全体実績</h2><br>
 						<div class="fare">
 							<left>

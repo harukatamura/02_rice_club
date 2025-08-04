@@ -598,7 +598,7 @@ $g_mail_idx=$_GET['mail_idx'];
 							</tr>
 							<tr>
 								<td class="tbd_tb_l">
-									<input type="text" name="件名" id="title" style="width:100%; font-size:12px;" value="<? echo $re; ?>【JEMTC】お問い合わせいただき誠にありがとうございます。※お問合せNo<? echo $g_idxnum ?>">
+									<input type="text" name="件名" id="title" style="width:100%; font-size:12px;" value="<? echo $re; ?>【JEMTC】お問い合わせいただき誠にありがとうございます。※お問合せNo.<? echo $g_idxnum ?>">
 								</td>
 							</tr>
 							<tr>

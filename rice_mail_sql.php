@@ -24,6 +24,7 @@ $thanksPage1 = "./rice_mail.php";
 $thanksPage2 = "./rice_mail_detail.php";
 $thanksPage3 = "./rice_mail_form.php";
 $thanksPage4 = "./rice_mail_input.php";
+$thanksPage5 = "./rice_mail_list_form.php";
 
 	//対象テーブル
 $table = "php_rice_mail";
@@ -190,6 +191,15 @@ if($_GET['page'] == "check"){
 	$thanksPage1 = "./rice_mail_checklist.php";
 }
 
+//メーリス送信ボタンが押された時
+if ( $g_do == 'reply_list' || $g_do == 'change_list'){
+	$g_post = $_POST;
+	$comm->ouputlog("====メーリス送信から取得====", $prgid, SYS_LOG_TYPE_INFO);
+	foreach($g_post as $key => $val){
+		$comm->ouputlog("key：" . $key.", val:".$val, $prgid, SYS_LOG_TYPE_DBUG);
+	}
+}
+
 //カテゴリ別情報設定
 //　1:infoメール更新
 $require="";
@@ -288,6 +298,16 @@ if($empty_flag != 1){
 		if ($g_do == 'upd_mail') {
 			mysql_upd_mail_kokyaku($db);
 			header("Location: ".$thanksPage4."?idxnum=".$g_idxnum);
+		}
+		//メーリスを確認待ちにした時
+		if ($g_do == 'change_list') {
+			mysql_change_list($db);
+			header("Location: ".$thanksPage5."?finish=check&idxnum=".$g_idxnum);
+		}
+		//メーリス送信ボタンが押された時
+		if ( $g_do == 'reply_list'){
+			mail_list_reply($db);
+			require_once('./rice_mail_list_reply.php');
 		}
 
 		//データベース切断
@@ -1013,6 +1033,158 @@ function mysql_ins_mail_kokyaku( $db) {
 
 function val_escape() {
 	
+}
+
+//--------------------------------------------------------------------------------------------------
+// ■メソッド名
+//   mysql_change_list
+//
+// ■概要
+//   メーリス確認待登録
+//
+// ■引数
+//   第一引数：データベース
+//
+//--------------------------------------------------------------------------------------------------
+
+function mysql_change_list( $db) {
+
+	//グローバル変数
+	//オブジェクト
+	global $comm;
+	global $dba;
+	//対象テーブル
+	global $table;
+	global $table_detail;
+	//対象プログラム
+	global $prgid;
+	//引数
+	global $g_post;
+	global $today;
+	
+	$table_group = "php_rice_mail_group";
+	$table_list = "php_rice_mail_list";
+
+	$comm->ouputlog("mysql_change_listログ出力", $prgid, SYS_LOG_TYPE_DBUG);
+	
+	$m_title = $g_post['件名'];
+	$m_contents = $g_post['件名'];
+	$m_name = $g_post['送信先'];
+
+	// エスケープ処理
+	if ($m_title != "") {
+		$m_title = addslashes($m_title);
+	}
+	if ($m_contents != "") {
+		$m_contents = addslashes($m_contents);
+	}
+	if ($m_name != "") {
+		$m_name = addslashes($m_name);
+	}
+
+	$query = "";
+	$query .= " SELECT GROUP_CONCAT(B.email separator  ',') as bcc ";
+	$query .= " FROM php_rice_mail_list_group A ";
+	$query .= " LEFT OUTER JOIN php_rice_personal_info B ON A.personal_idxnum=B.idxnum ";
+	$query .= " WHERE B.delflg=0 ";
+	$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+	$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+	if (!($rs = $db->query($query))) {
+		$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+	}
+	while ($row = $rs->fetch_array()) {
+		$m_bcc = $row['bcc'];
+	}
+
+	//データ更新
+	$_insert = "INSERT INTO " . $table_list;
+	$_insert .= " (insdt, upddt, senddt, mail_group, reservdt, ";
+	$_insert .= " send_email, correstaf, subject, contents)";
+	$_insert .= " VALUE ('$today', '$today', '$today', '$g_idxnum',  ";
+	$_insert .= " '$m_bcc', '$m_staff', '$m_title', '$m_contents')";
+	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
+	$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);
+	//データ追加実行
+	if (! $db->query($_insert)) {
+		$comm->ouputlog("☆★☆データ更新エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+		return false;
+	}
+	
+	$comm->ouputlog("===データ更新処理完了===", $prgid, SYS_LOG_TYPE_DBUG);
+	return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+// ■メソッド名
+//   mail_list_reply
+//
+// ■概要
+//   メーリス送信
+//
+// ■引数
+//   第一引数：データベース
+//
+//--------------------------------------------------------------------------------------------------
+function mail_list_reply( $db) {
+
+	//グローバル変数
+	//オブジェクト
+	global $comm;
+	global $dba;
+	//対象テーブル
+	global $table;
+	global $table_detail;
+	//対象プログラム
+	global $prgid;
+	//引数
+	global $g_post;
+	global $g_idxnum;
+	global $today;
+	
+	$table_group = "php_rice_mail_group";
+	$table_list = "php_rice_mail_list";
+
+	$comm->ouputlog("mail_list_replyログ出力", $prgid, SYS_LOG_TYPE_DBUG);
+
+	// ステータスを取得
+	$query = "  SELECT A.mail_status";
+	$query.= " FROM " . $table . " A ";
+	$query.= " WHERE A.mail_idxnum = " . sprintf("'%s'", $g_idxnum);
+	$query .=" AND A.delflg = 0";
+	$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+	$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+	if (!($rs = $db->query($query))) {
+		$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+	}
+	while ($row = $rs->fetch_array()) {
+		$now_status = $row['mail_status'];
+	}
+	// エスケープ処理
+	if ($m_title != "") {
+		$m_title = addslashes($m_title);
+	}
+	if ($m_contents != "") {
+		$m_contents = addslashes($m_contents);
+	}
+	if ($m_name != "") {
+		$m_name = addslashes($m_name);
+	}
+
+	//お客様情報の最終更新時間をアップデート
+	$_update = "UPDATE " . $table_list;
+	$_update .= " SET senddt = " . sprintf("'%s'", date('YmdHis'));
+	$_update .= " , sendflg = 1" ;
+	$_update .= " WHERE idxnum = " . sprintf("'%s'", $g_idxnum);
+	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
+	$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
+	//データ追加実行
+	if (! $db->query($_update)) {
+		$comm->ouputlog("☆★☆データ更新エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+		return false;
+	}
+	
+	$comm->ouputlog("===データ更新処理完了===", $prgid, SYS_LOG_TYPE_DBUG);
+	return true;
 }
 
 

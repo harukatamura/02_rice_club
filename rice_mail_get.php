@@ -37,7 +37,7 @@
 	//データベース接続
 	$db = "";
 	$result = $dba->mysql_con($db);
-	$comm->ouputlog("php_info_mail_getログ出力", $prgid, SYS_LOG_TYPE_DBUG);
+	$comm->ouputlog("php_rice_mail_getログ出力", $prgid, SYS_LOG_TYPE_DBUG);
 	
 
 	//=================================================

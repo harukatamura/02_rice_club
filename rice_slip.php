@@ -73,7 +73,7 @@
 		$comm->ouputlog("Excel出力 実行", $prgid, SYS_LOG_TYPE_INFO);
 		$reader = PHPExcel_IOFactory::createReader("Excel2007");
 		$book = $reader->load("./rice_sagawa_template.xlsx");
-		$sheet = $book->getSheetByName("佐川");
+		$sheet = $book->getSheetByName("Sheet0");
 		$chksheet = $book->getSheetByName("リスト");
 		//フラグを立てて出力するデータを取得
 		foreach($outputno as $value){
@@ -89,6 +89,8 @@
 				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 			}
 		}
+		$time_list = array("0812" => "01","1214" => "12","1416" => "14","1618" => "16","1820" => "18","1821" => "04","1921" => "19");
+		$time_list2 = array("0812" => "020","1214" => "022","1416" => "023","1618" => "024","1820" => "025","1821" => "021","1921" => "026");
 		$i = 1;
 		$j = 3; // 開始行
 		$t = 0;
@@ -111,6 +113,9 @@
 			$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 		}
 		while($row = $rs->fetch_array()){
+			if($g_category <> $row['category'] || $row['weight'] <> $g_weight){
+				$t = 0;
+			}
 			++$i;
 			++$j;
 			++$t;
@@ -131,25 +136,26 @@
 			$sheet->setCellValueByColumnAndRow(20, $i, "中部産業連盟ビル新館8F");
 			$sheet->setCellValueByColumnAndRow(21, $i, "(一社)日本電子機器補修協会");
 			$sheet->setCellValueByColumnAndRow(22, $i, "主食共同購入部");
-			$sheet->setCellValueByColumnAndRow(23, $i, "お米");
-			$sheet->setCellValueByColumnAndRow(24, $i, "精米倶楽部");
+			$sheet->setCellValueByColumnAndRow(24, $i, "お米");
 			$sheet->setCellValueByColumnAndRow(25, $i, "お米の定期便");
 			$sheet->setCellValueByColumnAndRow(26, $i, $row['category']);
 			$sheet->setCellValueByColumnAndRow(27, $i, $row['weight']."kg");
-			$sheet->setCellValueByColumnAndRow(64, $i, "RC");
-			$sheet->setCellValueByColumnAndRow(65, $i ,"お米");
-			$sheet->setCellValueByColumnAndRow(66, $i, "購入方法");
-			$sheet->setCellValueByColumnAndRow(65, $i, $row['ship_idxnum']);
 			// 時間指定があれば該当する時間帯指定サービスを選択（指定なしの場合は天地無用）・項目記入
-			$sheet->setCellValueByColumnAndRow(44, $i, $row['delivery_date']);
-			$sheet->setCellValueByColumnAndRow(45, $i, $row['specified_times']);
+			$sheet->setCellValueByColumnAndRow(44, $i, date('Ymd',strtotime($row['delivery_date'])));
+			$sheet->setCellValueExplicitByColumnAndRow(45, $i, $time_list[$row['specified_times']]);
 			$sheet->setCellValueByColumnAndRow(47, $i, $row['tanka']);
-			$p_tax = $row['tanka'] * 0.08;
+			$p_tax = floor($row['tanka'] * 0.08);
 			$sheet->setCellValueByColumnAndRow(48, $i, $p_tax);
 			// 指定シール設定
 			$sheet->setCellValueExplicitByColumnAndRow(51, $i, "010"); // eコレクト(全て可能)
-			$sheet->setCellValueExplicitByColumnAndRow(52, $i, "011"); // 取扱注意
-			
+			if($row['specified_times'] <> ""){
+				$sheet->setCellValueExplicitByColumnAndRow(52, $i, $time_list2[$row['specified_times']]); // 時間帯指定サービス
+			}
+			$sheet->setCellValueByColumnAndRow(60, $i, date('Ym24',strtotime($row['delivery_date'])));
+			$sheet->setCellValueByColumnAndRow(65, $i, "RC");
+			$sheet->setCellValueByColumnAndRow(66, $i ,"お米");
+			$sheet->setCellValueByColumnAndRow(67, $i, "購入方法");
+			$sheet->setCellValueByColumnAndRow(68, $i, $row['ship_idxnum']);
 			//チェックリストにデータ格納
 			$chksheet->setCellValueByColumnAndRow(0, $j, "□");
 			$chksheet->setCellValueByColumnAndRow(1, $j, $t);
@@ -166,7 +172,7 @@
 			if($g_category <> $row['category']){
 				$category_list[] = $row['category'];
 			}if($g_weight <> $row['weight']){
-				$weight_list[$row['category']] = $row['weight'];
+				$weight_list[$row['category']][] = $row['weight'];
 			}
 			$sumnum_list[$row['category']][$row['weight']] = $sumnum_list[$row['category']][$row['weight']] + 1;
 			$g_category = $row['category'];
@@ -174,18 +180,18 @@
 		}
 		//罫線をつける
 		$chksheet->getStyle('A5:H'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
+		$chksheet->setBreakByColumnAndRow(0, 3, PHPExcel_Worksheet::BREAK_NONE);
 		//印刷範囲を指定
 		$chksheet->getPageSetup()->setPrintArea('A1:H'.$j);
 		$chksheet->setCellValueByColumnAndRow(0, 1, "【精米倶楽部】".date('Y/n/j')."(".$p_staff."発行)");
 		$chksheet->getStyleByColumnAndRow(0, 1)->getFont()->setBold(true);
 		//リストを作成する
+		asort($weight_list);
 		$j=4;
-		asort($category_list);
-		foreach($category_list as $val){
-				$chksheet->setCellValueByColumnAndRow(9, $j, $val);
-			asort($weight_list[$val]);
+		foreach($category_list as  $val){
+			$chksheet->setCellValueByColumnAndRow(9, $j, $val);
 			foreach($weight_list[$val] as $val2){
-				$chksheet->setCellValueByColumnAndRow(10, $j, $val2);
+				$chksheet->setCellValueByColumnAndRow(10, $j, $val2."kg");
 				$chksheet->setCellValueByColumnAndRow(11, $j, $sumnum_list[$val][$val2]);
 				++$j;
 			}
