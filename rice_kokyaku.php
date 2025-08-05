@@ -259,9 +259,6 @@
 			if ($('#name').val() != '') {
 				change_back_true('name');
 			}
-			if ($('#email').val() != '') {
-				change_back_true('email');
-			}
 			if ($('#phonenum1').val() != '') {
 				change_back_true('phonenum1');
 			}
@@ -474,15 +471,6 @@
 					}
 				}
 			);
-			$('#email').on(
-				'input', function() {
-					if ($('#email').val() != '') {
-						change_back_true('email');
-					} else {
-						change_back_false('email');
-					}
-				}
-			);
 			$('#postcode1').on(
 				'input', function() {
 					let value = $(this).val();
@@ -629,11 +617,10 @@
 			let postcode2 = $('#postcode2').val();
 			let address1 = $('#address1').val();
 			let address2 = $('#address2').val();
-			let email = $('#email').val();
 			let submit_punc = '';
 			let submit_swal = '';
 			// 必須項目未入力ならエラー表示
-			if(name == '' || phonenum1 == '' || phonenum1 == null || postcode1 == '' || postcode2 == '' || address1 == '' || address2 == '' || email == '') {
+			if(name == '' || phonenum1 == '' || phonenum1 == null || postcode1 == '' || postcode2 == '' || address1 == '' || address2 == '') {
 				if (name == '') {
 					submit_swal = '氏名'
 					submit_punc = '・';
@@ -649,9 +636,6 @@
 				if (address1 == '選択してください' || address2 == '') {
 					submit_swal += submit_punc + '住所'
 					submit_punc = '・';
-				}
-				if (email == '') {
-					submit_swal += submit_punc + 'メールアドレス'
 				}
 				Swal.fire
 				(
@@ -778,7 +762,7 @@
 										<div class="form-group">
 											<img src="./images/hisu.gif" alt="必須" >
 											<label>メールアドレス</label>
-											<input type="text" id="email" name="メールアドレス" value="<?php echo $row['email'] ?>" class="form-control required_form">
+											<input type="text" id="email" name="メールアドレス" value="<?php echo $row['email'] ?>" class="form-control">
 										</div>
 									</div>
 									<br><br><br><br>

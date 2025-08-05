@@ -671,8 +671,9 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 			<form name="search" method="post" action="./rice_mail.php">
 				<? if($p_staff == "田村"){ ?>
 					<div id="checkwait">
-						<input type="button" class="search" OnClick="window.open('./mail_list.php')" value="メーリス送信"><br>
+						<input type="button" class="search" OnClick="window.open('./rice_mail_list_form.php?do=reply')" value="メーリス送信"><br>
 					</div>
+				<? }if($p_staff == "石川" || $p_staff == "坂口" || $p_staff == "中村" || $p_staff == "田村"){ ?>
 					<div id="checkwait">
 						<input type="button" class="search" OnClick="window.open('./rice_mail_checklist.php')" value="確認待ちリスト"><br>
 					</div>

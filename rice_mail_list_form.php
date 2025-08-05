@@ -43,21 +43,9 @@ $s_staff = $_COOKIE['con_perf_staff'];
 
 //id取得
 $g_idxnum=$_GET['idxnum'];
-$g_mail_idx=$_GET['mail_idx'];
 
-$query = "SELECT A.title, A.mail_group ";
-$query .= " FROM php_rice_mail_list_group A ";
-$query .= " WHERE A.delflg=0 ";
-$query .= " GROUP BY A.mail_group ";
-$query .= " ORDER BY A.mail_group ";
-$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
-$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-if (!($rs = $db->query($query))) {
-	$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-}
-while ($row = $rs->fetch_array()) {
-	$arr_grp[$row['mail_group']] = $row['title'];
-}
+$arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱくコース" => "わんぱくコース", "ハッピーコース" => "ハッピーコース", "プラチナコース" => "プラチナコース");
+
 ?>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -99,7 +87,7 @@ while ($row = $rs->fetch_array()) {
 			padding: 0px;
 			text-align: center;
 			width:100%;
-			height:250px; 
+			height:80; 
 		}
 		#main{
 			width: 600px;	/*コンテンツ幅*/
@@ -128,8 +116,9 @@ while ($row = $rs->fetch_array()) {
 		}
 		/* --- テーブル --- */
 		table.tbh{
+			text-align:center;
 			margin:0 auto;
-			width: 1015px;	/*コンテンツ幅*/
+			width: 100%;	/*コンテンツ幅*/
 		}
 		/* --- テーブルヘッダーセル（th） --- */
 		th.tbd_th_1 {
@@ -232,33 +221,9 @@ while ($row = $rs->fetch_array()) {
 		}
 	</style>
 
+	<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 	<script type="text/javascript">
-		//コメント登録
-		function Ins_Contents(idx){
-			if(document.frm.category.selectedIndex == 0){
-				alert('コメント/メール受信を選択してください。');
-			}else if(document.frm.contents.value == ""){
-				alert('内容を入力してください。');
-			}else{
-				var rowINX = 'do=inscontents&idxnum='+idx;
-				var rowINX = 'do=inscontents';
-				document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
-				document.forms['frm'].submit();
-			}
-		}
-		//コメント編集
-		function Edit_Contents(idx,m_idx){
-			if(document.frm.category.selectedIndex == 0){
-				alert('コメント/メール受信/メール送信を選択してください。');
-			}else if(document.frm.contents.value == ""){
-				alert('内容を入力してください。');
-			}else{
-				var rowINX = 'do=editcontents&idxnum='+idx+'&mail_idx='+m_idx;
-				var rowINX = 'do=editcontents';
-				document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
-				document.forms['frm'].submit();
-			}
-		}
 		//メール確認
 		function Mail_Check(idx){
 			if(document.frm.email.value == ""){
@@ -269,7 +234,6 @@ while ($row = $rs->fetch_array()) {
 				alert('内容を入力してください。');
 			}else{
 				var rowINX = 'do=check&idxnum='+idx;
-				var rowINX = 'do=check';
 				if(window.confirm('確認画面に移行します')){
 					document.forms['frm'].action = './rice_mail_list_form.php?' + rowINX;
 					document.forms['frm'].submit();
@@ -278,8 +242,7 @@ while ($row = $rs->fetch_array()) {
 		}
 		//メール返信
 		function Mail_Reply(idx){
-			var rowINX = 'do=reply&idxnum='+idx;
-			var rowINX = 'do=reply';
+			var rowINX = 'do=reply_list&idxnum='+idx;
 			if(window.confirm('メールを送信しますか？')){
 				document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 				document.forms['frm'].submit();
@@ -292,9 +255,8 @@ while ($row = $rs->fetch_array()) {
 			}
 		}
 		//状態変更
-		function Change_Sql(idx){
-			var rowINX = 'do=change_list&idxnum='+idx;
-			var rowINX = 'do=change_list';
+		function Save_Sql(idx){
+			var rowINX = 'do=save_list&idxnum='+idx;
 			document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 			document.forms['frm'].submit();
 		}
@@ -306,17 +268,16 @@ while ($row = $rs->fetch_array()) {
 	if ($g_finish == 'send') {
 	?>
 		<script type="text/javascript">
-			localStorage.setItem('mail_check_flg', 1);
+			swal("Complete!", "送信完了", "success");
 			window.opener.location.href = './rice_mail_checklist.php';
 			close();
 		</script>
 	<?
-	} else if ($g_finish == 'check') {
+	} else if ($g_finish == 'save') {
 	?>
 		<script type="text/javascript">
-			localStorage.setItem('mail_check_before_flg', 1);
-			window.opener.location.href = './rice_mail.php';
-			close();
+			//保存が完了しましたの表示
+			swal("Complete!", "下書を保存しました", "success");
 		</script>
 	<?
 	}
@@ -324,7 +285,7 @@ while ($row = $rs->fetch_array()) {
 	<div id="header">
 		<table class="tbh" id= "TBL">
 			<tr>
-				<td class ="tbd_td_p3_l">
+				<td class ="tbd_td_p3_c">
 					<h2>精米倶楽部　メーリス送信</h2>
 					
 				</td>
@@ -353,8 +314,26 @@ while ($row = $rs->fetch_array()) {
 					$arr_temp_contents[$row['title']] = $row['contents'];
 				}
 				//送信先アドレス
-				$to_add = "kome@jemtcnet.jp";
-				$bcc_add = "";
+				$to_add = "no-reply-kome@jemtcnet.jp";
+				$bcc_add = "tamura@jemtc.jp";
+				$title = "【精米倶楽部】JEMTCからのご案内";
+				$query = "";
+				$query .= "SELECT A.title, A.contents, A.idxnum, A.to_email, A.bcc, A.mail_group ";
+				$query .= " FROM php_rice_mail_list A ";
+				$query .= " WHERE A.idxnum = '".$g_idxnum."' ";
+				$query .= " ORDER BY A.idxnum ";
+				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+				if (!($rs = $db->query($query))) {
+					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+				}
+				while ($row = $rs->fetch_array()) {
+					$to_add = $row['to_email'];
+					$bcc_add = $row['bcc'];
+					$contents = $row['contents'];
+					$title = $row['title'];
+					$mail_group = $row['mail_group'];
+				}
 				//返信定型文
 				$g_tmp = 0;
 				foreach($arr_temp as $key => $val){
@@ -364,9 +343,9 @@ while ($row = $rs->fetch_array()) {
 				}
 				if ($quote_flg == 0) {
 					if ($g_tmp > 0) {
-						$honbun = $arr_temp_contents[$arr_temp[$g_tmp]]."\n\n";
+						$honbun = $arr_temp_contents[$arr_temp[$g_tmp]]."\n\n".$contents;
 					} else {
-						$honbun = "";
+						$honbun = $contents;
 					}
 				} else if ($checkflg == 0) {
 					if ($g_tmp > 0) {
@@ -377,10 +356,9 @@ while ($row = $rs->fetch_array()) {
 				} else {
 					$honbun = $contents;
 				}
-				$title = "【精米倶楽部】JEMTCからのご案内";
 				?>
 				<div class="row">
-					<h1>メーリングリスト送信</h1>
+					<h1>メーリス送信</h1>
 				</div>
 				<div id="main>"
 					<table class="tbh">
@@ -403,7 +381,7 @@ while ($row = $rs->fetch_array()) {
 							<td class="tbd_tb_l">
 								<select name="送信先" style="padding :3px 10px;">
 									<? foreach($arr_grp as $key => $val){ ?>
-										<option value="<?= $key; ?>"><?= $val; ?></option>
+										<option value="<?= $key; ?>" <? if($mail_group == $key){echo "selected='selected'";} ?>><?= $val; ?></option>
 									<? } ?>
 								</select>
 							</td>
@@ -478,7 +456,7 @@ while ($row = $rs->fetch_array()) {
 			<? }else if($_GET['do'] == "redo"){
 				?>
 				<div class="row">
-					<h1>infoメール返信</h1>
+					<h1>メーリス送信</h1>
 				</div>
 				<div id="main>"
 					<table class="tbh">
@@ -554,114 +532,75 @@ while ($row = $rs->fetch_array()) {
 						</tr>
 					</table>
 				</div>
-			<?php
-			} else if($_GET['do'] == "check") { 
-				if(isset($g_idxnum)){
-					//----- データ抽出
-					$query = "";
-					$query .= " SELECT A.mail_status";
-					$query .= " FROM php_rice_mail_list A ";
-					$query .= " WHERE A.mail_idxnum = $g_idxnum";
-					$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
-					$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-					if (!($rs = $db->query($query))) {
-						$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-					}
-					while ($row = $rs->fetch_array()) {
-						$status = $row['mail_status'];
-					}
-				}
-				?>
-					<div class="row">
-						<h1>infoメール返信内容確認</h1>
-					</div>
-					<div id="main>"
-						<table class="tbh">
-							<tr>
-								<th class="tbd_th_l">
-									<p>＜To＞</p>
-									<pre><? echo $_POST['email'] ?></pre>
-									<input type="text" style="display:none" name="email" value="<? echo $_POST['email'] ?>">
-								</th>
-							</tr>
-							<tr>
-								<th class="tbd_th_l">
-									<p>＜送信先＞</p>
-									<pre><? echo $arr_grp[$_POST['送信先']] ?></pre>
-									<input type="text" style="display:none" name="送信先" value="<? echo $_POST['送信先'] ?>">
-								</th>
-							</tr>
-							<tr>
-								<th class="tbd_th_l">
-									<p>＜BCc＞</p>
-									<pre><? echo $_POST['bcc'] ?></pre>
-									<input type="text" style="display:none" name="bcc" value="<? echo $_POST['bcc'] ?>">
-								</th>
-							</tr>
-							<tr>
-								<th class="tbd_th_l">
-									<p>＜タイトル＞</p>
-									<?
-									$p_subject = $_POST['件名'];
-									$main_text = $_POST['本文'];
-									// エスケープ処理
-									$p_subject = addslashes($p_subject);
-									$main_text = addslashes($main_text);
-									?>
-									<pre><? echo $p_subject ?></pre>
-									<input type="text" style="display:none" name="件名" value="<? echo $p_subject ?>">
-								</th>
-							</tr>
-							<tr>
-								<th class="tbd_th_l">
-									<p>＜本文＞</p>
-								</th>
-							</tr>
-							<tr>
-								<td class="tbd_tb_l">
-									<pre><? echo return_value($main_text) ?></pre>
-									<textarea name="本文" style="display:none"><? echo return_value($main_text) ?></textarea>
-								</td>
-							</tr>
-						</table>
-						<table class="tbh">
-							<tr>
-								<td class="tbd_tb_c">
-									<button class="btn btn-default" style="position: absolute;left:43%" onClick="javascript:Mail_Redo(<? echo $g_idxnum; ?>); return false;">戻る</button>
-								</td>
-								<!--
-								<button class="btn btn-default" style="position: absolute; left: 51%;" onClick="javascript:Mail_Reply(<? echo $g_idxnum; ?>); return false;">確認待ちへ</button>
-								</td>
-								-->
-								<?php
-								if ($status != 8) {
+			<?php } else if($_GET['do'] == "check") { ?>
+				<div class="row">
+					<h1>メーリス送信内容確認</h1>
+				</div>
+				<div id="main>"
+					<table class="tbh">
+						<tr>
+							<th class="tbd_th_l">
+								<p>＜To＞</p>
+								<pre><? echo $_POST['email'] ?></pre>
+								<input type="text" style="display:none" name="email" value="<? echo $_POST['email'] ?>">
+							</th>
+						</tr>
+						<tr>
+							<th class="tbd_th_l">
+								<p>＜送信先＞</p>
+								<pre><? echo $arr_grp[$_POST['送信先']] ?></pre>
+								<input type="text" style="display:none" name="送信先" value="<? echo $_POST['送信先'] ?>">
+							</th>
+						</tr>
+						<tr>
+							<th class="tbd_th_l">
+								<p>＜BCc＞</p>
+								<pre><? echo $_POST['bcc'] ?></pre>
+								<input type="text" style="display:none" name="bcc" value="<? echo $_POST['bcc'] ?>">
+							</th>
+						</tr>
+						<tr>
+							<th class="tbd_th_l">
+								<p>＜タイトル＞</p>
+								<?
+								$p_subject = $_POST['件名'];
+								$main_text = $_POST['本文'];
+								// エスケープ処理
+								$p_subject = addslashes($p_subject);
+								$main_text = addslashes($main_text);
 								?>
-									<td class="tbd_tb_c">
-										<input type="text" style="display:none;" name="状態<?php echo $g_idxnum ?>" value="8">
-										<button class="btn btn-default" style="position: absolute; left: 51%;" onClick="javascript:Change_Sql(<? echo $g_idxnum; ?>); return false;">確認待ちへ</button>
-									</td>
-								<?php
-								} else {
-								?>
-									<td class="tbd_tb_c">
-										<button class="btn btn-default" style="position: absolute;" onClick="javascript:Mail_Reply(<? echo $g_idxnum; ?>);">メール送信</button>
-									</td>
-									<td class="tbd_tb_c">
-										<button class="btn btn-default" style="position: absolute; left:61%;" onClick="javascript:Change_Sql(<? echo $g_idxnum; ?>);">確認待ちへ</button>
-									</td>
-								<?php
-								}
-								?>
-							</tr>
-						</table>
-						<table class="tbh">
-							<tr>
-								<td class="tbd_tb_r">
-									<p style="text-align:right; font-size:12px;"><a href="Javascript:window.close()">閉じる</a></p>
-								</td>
-							</tr>
-						</table>
-					</div>
+								<pre><? echo $p_subject ?></pre>
+								<input type="text" style="display:none" name="件名" value="<? echo $p_subject ?>">
+							</th>
+						</tr>
+						<tr>
+							<th class="tbd_th_l">
+								<p>＜本文＞</p>
+							</th>
+						</tr>
+						<tr>
+							<td class="tbd_tb_l">
+								<pre><? echo return_value($main_text) ?></pre>
+								<textarea name="本文" style="display:none"><? echo return_value($main_text) ?></textarea>
+							</td>
+						</tr>
+					</table>
+					<table class="tbh">
+						<tr>
+							<td class="tbd_tb_c">
+								<button class="btn btn-default" style="position: absolute;left:43%" onClick="javascript:Mail_Redo(<? echo $g_idxnum; ?>); return false;">戻る</button>
+								<button class="btn btn-default" style="position: absolute;" onClick="javascript:Mail_Reply(<? echo $g_idxnum; ?>);">メール送信</button>
+								<button class="btn btn-default" style="position: absolute; left:61%;" onClick="javascript:Save_Sql(<? echo $g_idxnum; ?>);">下書保存</button>
+						</tr>
+					</table>
+					<table class="tbh">
+						<tr>
+							<td class="tbd_tb_r">
+								<p style="text-align:right; font-size:12px;"><a href="Javascript:window.close()">閉じる</a></p>
+							</td>
+						</tr>
+					</table>
+				</div>
 			<? } ?>
 		</form>
 	</div>

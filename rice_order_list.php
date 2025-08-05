@@ -542,7 +542,12 @@
 				<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
 					<p style="text-align:right"><a href="./rice_order.php" class="btn-border-b">実績一覧に戻る</a></p>
 					<h2>顧客情報一覧</h2><br>
-					<p>※お名前クリックで顧客情報修正画面が開きます</p>
+					<p>
+					※お名前クリックで顧客情報修正画面が開きます<br><br>
+					　＜検索方法＞<br>
+					　①Ctrl + F<br>
+					　②お名前を入力（※ご注文された際の漢字）
+					</p>
 					<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 						<tr style="background:#ccccff">
 							<th class="tbd_th_p1"><strong>No.</strong></th>
@@ -565,7 +570,7 @@
 							LEFT OUTER JOIN php_rice_subscription B ON A.idxnum=B.personal_idxnum 
 							LEFT OUTER  JOIN php_rice_shipment C ON B.subsc_idxnum=C.subsc_idxnum 
 							WHERE A.status='申込' 
-							ORDER BY A.idxnum, A.address1, A.area, A.idxnum, B.date_s, C.delivery_date, C.category, C.weight, A.postcd1
+							ORDER BY A.idxnum DESC
 						";
 						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 						$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
