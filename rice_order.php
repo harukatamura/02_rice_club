@@ -586,8 +586,13 @@
 			<div id="main">
 				<div id="formWrap">
 					<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
-						<p style="text-align:right"><a href="./rice_mail.php" class="btn-border-b">メール問合一覧</a>　<a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a></p>
-						<h2>全体実績</h2><br>
+						<p style="text-align:right">
+							<?php if($p_staff == "田村"){ ?><a href="./rice_slip.php" class="btn-border-b" target="_blank">伝票発行</a>　<? } ?>
+							<a href="./rice_mail.php" class="btn-border-b" target="_blank">メール問合一覧</a>　<a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a>
+						</p>
+						<h2>検索条件</h2><br>
+						<?php list($week, $p_date1, $p_date2, $p_staff) = $comm->getcalender($db,1,6); ?>
+						<h2>全体実績　（<?php echo  date('Y/n/j', strtotime($p_date1))."～".date('Y/n/j', strtotime($p_date2)) ?>）</h2><br>
 						<div class="fare">
 							<left>
 								<div class="fare-calendar">
@@ -600,6 +605,8 @@
 											$query = "SELECT category, SUM(weight) as weight, COUNT(*) as cnt ";
 											$query .= " FROM php_rice_subscription ";
 											$query .= " WHERE status='申込' ";
+											$query .=" AND insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)";
+											$query .=" AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)";
 											$query .= " GROUP BY category ";
 											$query .= " ORDER BY category";
 											$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
@@ -665,7 +672,7 @@
 								</div>
 							</left>
 						</div><br><br>
-						<h2>実績詳細</h2><br>
+						<h2>実績詳細　（<?= date('Y/n/j', strtotime($p_date1))."～".date('Y/n/j', strtotime($p_date2)) ?>）</h2><br>
 						<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 							<tr><td class="category"><strong>コース別実績</strong></td></tr>
 						</table><br>
@@ -687,6 +694,8 @@
 								FROM php_rice_subscription A 
 								LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
 								WHERE A.status='申込' 
+								 AND A.insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)
+								 AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)
 								GROUP BY A.category, A.weight 
 								ORDER BY A.category, A.weight
 							";
@@ -727,7 +736,7 @@
 								<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
 							</tr>
 						</table><br><br><br>
-						<h2>日別実績</h2><br>
+						<h2>日別実績　（<?= date('Y/n/j', strtotime($p_date1))."～".date('Y/n/j', strtotime($p_date2)) ?>）</h2><br>
 							<?php
 							// ================================================
 							// ■　□　■　□　全体表示　■　□　■　□
@@ -738,6 +747,8 @@
 								FROM php_rice_subscription A 
 								LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
 								WHERE A.status='申込' 
+								 AND A.insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)
+								 AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)
 								GROUP BY DATE(A.insdt), A.category, A.weight 
 								ORDER BY DATE(A.insdt), A.category, A.weight
 							";

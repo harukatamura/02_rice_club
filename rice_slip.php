@@ -136,10 +136,9 @@
 			$sheet->setCellValueByColumnAndRow(20, $i, "中部産業連盟ビル新館8F");
 			$sheet->setCellValueByColumnAndRow(21, $i, "(一社)日本電子機器補修協会");
 			$sheet->setCellValueByColumnAndRow(22, $i, "主食共同購入部");
-			$sheet->setCellValueByColumnAndRow(24, $i, "お米");
-			$sheet->setCellValueByColumnAndRow(25, $i, "お米の定期便");
-			$sheet->setCellValueByColumnAndRow(26, $i, $row['category']);
-			$sheet->setCellValueByColumnAndRow(27, $i, $row['weight']."kg");
+			$sheet->setCellValueByColumnAndRow(24, $i, "精米倶楽部");
+			$sheet->setCellValueByColumnAndRow(25, $i, $row['category']);
+			$sheet->setCellValueByColumnAndRow(26, $i, $row['weight']."kg");
 			// 時間指定があれば該当する時間帯指定サービスを選択（指定なしの場合は天地無用）・項目記入
 			$sheet->setCellValueByColumnAndRow(44, $i, date('Ymd',strtotime($row['delivery_date'])));
 			$sheet->setCellValueExplicitByColumnAndRow(45, $i, $time_list[$row['specified_times']]);

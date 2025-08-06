@@ -722,21 +722,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 								<td class="sh_td_l"><input type="text" name="検索会社名" value="<? echo $search_company ?>" size="21"></td>
 							</tr>
 							<tr>
-								<th class="sh_th">担当者</th>
-								<td class="sh_td_c"></td>
-								<td class="sh_td_l">
-									<select name="検索担当者">
-										<?php foreach($p_sendlist as $list) {
-											if ($search_staff =="" &&  $list[0] == "未選択" || $search_staff == $list[0]) { ?>
-												<option value="<? echo $list[0] ?>" selected="selected"><? echo $list[0]; ?></option>
-											<? }else{ ?>
-												<option value="<? echo  $list[0]?>"><? echo  $list[0]; ?></option>
-											<? }
-										} ?>
-									</select>
-								</td>
-							</tr>
-							<tr>
 								<th class="sh_th">問合せ日<input type="button" OnClick="Javascript:ClearDate('問合せ日付１','問合せ日付２')" value="ｸﾘｱ"></th>
 								<td class="sh_td_c"></td>
 								<td class="sh_td_l">

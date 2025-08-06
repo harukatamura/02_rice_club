@@ -65,7 +65,7 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 			margin-right: auto;
 			margin-left: auto;
 			background-color: white;
-			padding-top: 250px;
+			padding-top: 80px;
 			padding-bottom: 200px;
 			width: 700px;
 			margin: 0px auto; /* （上下、左右） */
@@ -93,7 +93,7 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 			width: 600px;	/*コンテンツ幅*/
 			text-align: center;
 			margin: auto;
-			padding-top: 250px;
+			padding-top: 80px;
 			padding-bottom: 200px;
 			overflow: auto; 	/* コンテンツの表示を自動に設定（スクロール） */
 			background-color: white;
