@@ -506,10 +506,10 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					while ($row = $rs->fetch_array()) {
 						$i++;
 						?>
-						<tr>
+						<tr onClick="Javascript:mailDetail(<?php echo $row['idxnum'] ?>,<?php echo $row['sendflg'] ?>)">
 							<td class="tbd_td_p1">
 								<? if($p_staff == "島村" || $p_staff == "田村"){ ?>
-									<a href="Javascript:mailDetail(<?php echo $row['idxnum'] ?>,<?php echo $row['sendflg'] ?>)"><?php echo $row['idxnum'] ?></a>
+									<a href=""><?php echo $row['idxnum'] ?></a>
 								<? }else{ ?>
 									<? if($row['sendflg'] > 0){ ?>
 										<a href="Javascript:mailDetail(<?php echo $row['idxnum'] ?>,<?php echo $row['sendflg'] ?>)"><?php echo $row['idxnum'] ?></a>

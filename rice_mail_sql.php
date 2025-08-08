@@ -1123,7 +1123,7 @@ function mail_list_reply( $db) {
 		$_insert .= " (insdt, upddt, mail_group, ";
 		$_insert .= " bcc, to_email, title, contents, correstaf,file)";
 		$_insert .= " VALUE ('$today', '$today','$m_send' ";
-		$_insert .= " ,'$m_bcc', '$m_email', '$m_title', '$m_contents', '$g_staff', '$m_file)";
+		$_insert .= " ,'$m_bcc', '$m_email', '$m_title', '$m_contents', '$g_staff', '$m_file')";
 		$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 		$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);
 		//データ追加実行
