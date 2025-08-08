@@ -48,22 +48,28 @@ $result = $dba->mysql_con($db);
 		$sign .= "─────────────────\n";
 
 		//送信先を取得
-		$query = " SELECT GROUP_CONCAT(B.email separator  ',') as bcc ";
-		$query .= " FROM php_rice_subscription A ";
-		$query .= " LEFT OUTER JOIN php_rice_personal_info B ON A.personal_idxnum=B.idxnum ";
-		$query .= " WHERE B.delflg=0 ";
-		$query .= " AND '".$today."' BETWEEN DATE_FORMAT(date_s, '%Y-%m-01') AND date_e ";
-		if($g_post['送信先'] <> "全員"){
-			$query .= " AND A.category = '".$m_send."'";
+		if($m_send <> "直接入力"){
+			$query = " SELECT GROUP_CONCAT(B.email separator  ',') as bcc ";
+			$query .= " FROM php_rice_shipment A ";
+			$query .= " LEFT OUTER JOIN php_rice_subscription C ON A.subsc_idxnum=C.subsc_idxnum ";
+			$query .= " LEFT OUTER JOIN php_rice_personal_info B ON C.personal_idxnum=B.idxnum ";
+			$query .= " WHERE B.delflg=0 ";
+			$query .= " AND A.delflg=0 ";
+			$query .= " AND B.email<>'' ";
+			$query .= " AND DATE_FORMAT(A.delivery_date, '%Y-%m')='".date('Y-m',strtotime($today))."'";
+			if($m_send <> "全員"){
+				$query .= " AND A.category = '".$m_send."'";
+			}
+			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+			if (!($rs = $db->query($query))) {
+				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+			}
+			while ($row = $rs->fetch_array()) {
+				$m_bcc = $m_bcc.",".$row['bcc'];
+			}
 		}
-		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
-		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-		if (!($rs = $db->query($query))) {
-			$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-		}
-		while ($row = $rs->fetch_array()) {
-			$m_bcc = $g_post['bcc'].",".$row['bcc'];
-		}
+		
 	//	$m_bcc = "haruka.ihdc@gmail.com,haruka.ihdc@icloud.com";
 		
 		require_once( './PHPMailer/PHPMailerAutoload.php' );
@@ -103,6 +109,12 @@ $result = $dba->mysql_con($db);
 		
 		$mail->AddAttachment($m_file);//添付ファイル
 
+		$comm->ouputlog("送信先：".$g_post['送信先'], $prgid, SYS_LOG_TYPE_INFO);
+		$comm->ouputlog("件名：".$m_title, $prgid, SYS_LOG_TYPE_INFO);
+		$comm->ouputlog("内容：".$m_contents, $prgid, SYS_LOG_TYPE_INFO);
+		$comm->ouputlog("To：".$m_email, $prgid, SYS_LOG_TYPE_INFO);
+		$comm->ouputlog("m_bcc：".$m_bcc, $prgid, SYS_LOG_TYPE_INFO);
+		
 		if( !$mail -> Send() ){
 			$mail_result = "メールの送信に失敗しました。<br>";
 			$mail_result .= "Mailer Error: " . $mailer->ErrorInfo;
@@ -111,6 +123,7 @@ $result = $dba->mysql_con($db);
 			$_update .= " SET upddt = NOW()";
 			$_update .= " , send_dt = NOW()" ;
 			$_update .= " , bcc = '$m_bcc'" ;
+			$_update .= " , contents = '$m_contents'" ;
 			$_update .= " , updcount = updcount + 1" ;
 			$_update .= " , sendflg = 1" ;
 			$_update .= " WHERE idxnum = " . sprintf("'%s'", $g_idxnum);

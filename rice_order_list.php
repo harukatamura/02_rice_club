@@ -570,6 +570,7 @@
 							LEFT OUTER JOIN php_rice_subscription B ON A.idxnum=B.personal_idxnum 
 							LEFT OUTER  JOIN php_rice_shipment C ON B.subsc_idxnum=C.subsc_idxnum 
 							WHERE A.status='申込' 
+							AND A.delflg='0' 
 							ORDER BY A.idxnum DESC, C.delivery_date
 						";
 						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);

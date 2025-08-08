@@ -25,6 +25,7 @@ $thanksPage2 = "./rice_mail_detail.php";
 $thanksPage3 = "./rice_mail_form.php";
 $thanksPage4 = "./rice_mail_input.php";
 $thanksPage5 = "./rice_mail_list_form.php";
+$thanksPage6 = "./rice_mail_list.php";
 
 	//対象テーブル
 $table = "php_rice_mail";
@@ -202,6 +203,7 @@ if ( $g_do == 'reply_list' || $g_do == 'save_list'){
 	$m_title = $g_post['件名'];
 	$m_contents = $g_post['本文'];
 	$m_send = $g_post['送信先'];
+	$m_bcc = $g_post['bcc'];
 }
 
 //カテゴリ別情報設定
@@ -313,6 +315,12 @@ if($empty_flag != 1){
 			$g_idxnum = mail_list_reply($db);
 			require_once('./rice_mail_list_reply.php');
 		}
+		//メーリス下書削除ボタンが押された時
+		if ( $g_do == 'delete_list'){
+			mail_list_delete($db);
+			header("Location: ".$thanksPage6);
+		}
+		
 
 		//データベース切断
 		if ($result) { $dba->mysql_discon($db); }
@@ -1071,6 +1079,7 @@ function mail_list_reply( $db) {
 	global $m_contents;
 	global $m_send;
 	global $m_bcc;
+	global $m_file;
 	
 	$table_list = "php_rice_mail_list";
 
@@ -1097,6 +1106,7 @@ function mail_list_reply( $db) {
 		$_update .= " , to_email = " . sprintf("'%s'", $m_email);
 		$_update .= " , title = " . sprintf("'%s'", $m_title);
 		$_update .= " , contents = " . sprintf("'%s'", $m_contents);
+		$_update .= " , file = " . sprintf("'%s'", $m_file);
 		$_update .= " WHERE idxnum = " . sprintf("'%s'", $g_idxnum);
 		$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 		$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
@@ -1111,9 +1121,9 @@ function mail_list_reply( $db) {
 		//データ更新
 		$_insert = "INSERT INTO " . $table_list;
 		$_insert .= " (insdt, upddt, mail_group, ";
-		$_insert .= " bcc, to_email, title, contents, correstaf)";
+		$_insert .= " bcc, to_email, title, contents, correstaf,file)";
 		$_insert .= " VALUE ('$today', '$today','$m_send' ";
-		$_insert .= " ,'$m_bcc', '$m_email', '$m_title', '$m_contents', '$g_staff')";
+		$_insert .= " ,'$m_bcc', '$m_email', '$m_title', '$m_contents', '$g_staff', '$m_file)";
 		$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 		$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);
 		//データ追加実行
@@ -1128,6 +1138,74 @@ function mail_list_reply( $db) {
 	}
 
 	return $g_idxnum;
+}
+
+//--------------------------------------------------------------------------------------------------
+// ■メソッド名
+//   mail_list_delete
+//
+// ■概要
+//   メーリス下書削除
+//
+// ■引数
+//   第一引数：データベース
+//
+//--------------------------------------------------------------------------------------------------
+function mail_list_delete( $db) {
+
+	//グローバル変数
+	//オブジェクト
+	global $comm;
+	global $dba;
+	//対象テーブル
+	global $table;
+	global $table_detail;
+	//対象プログラム
+	global $prgid;
+	//引数
+	global $g_post;
+	global $g_staff;
+	global $g_idxnum;
+	global $today;
+	global $m_email;
+	global $m_title;
+	global $m_contents;
+	global $m_send;
+	global $m_bcc;
+	
+	$table_list = "php_rice_mail_list";
+
+	$comm->ouputlog("mail_list_deleteログ出力", $prgid, SYS_LOG_TYPE_DBUG);
+
+	// エスケープ処理
+	if ($m_title != "") {
+		$m_title = addslashes($m_title);
+	}
+	if ($m_contents != "") {
+		$m_contents = addslashes($m_contents);
+	}
+	if ($m_name != "") {
+		$m_name = addslashes($m_name);
+	}
+
+	//データがある場合は削除フラグ追加
+	if($g_idxnum > 0 || $g_idxnum <> "undefined"){
+		$_update = "UPDATE " . $table_list;
+		$_update .= " SET upddt = " . sprintf("'%s'", date('YmdHis'));
+		$_update .= " , updcount = updcount + 1" ;
+		$_update .= " , delflg = 1" ;
+		$_update .= " WHERE idxnum = " . sprintf("'%s'", $g_idxnum);
+		$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
+		$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
+		//データ追加実行
+		if (! $db->query($_update)) {
+			$comm->ouputlog("☆★☆データ更新エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+			return false;
+		}
+		$comm->ouputlog("===データ更新処理完了===", $prgid, SYS_LOG_TYPE_DBUG);
+	}
+
+	return true;
 }
 
 

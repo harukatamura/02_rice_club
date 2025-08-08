@@ -105,7 +105,7 @@
 		$query .= " FROM php_rice_shipment A";
 		$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
 		$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
-		$query .= " WHERE A.output_flg = 3 AND A.stopflg = 0";
+		$query .= " WHERE A.output_flg = 3 AND A.stopflg = 0 AND A.delflg = 0";
 		$query .= " ORDER BY A.category, A.weight, C.postcd1, C.postcd2";
 		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
@@ -769,6 +769,7 @@
 						$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
 						$query .= " WHERE A.stopflg = 0";
 						$query .= " AND A.output_flg = 0";
+						$query .= " AND A.delflg = 0";
 						$query .= " AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')";
 						$query .= " ORDER BY A.output_flg, A.category, A.weight, C.idxnum";
 						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);

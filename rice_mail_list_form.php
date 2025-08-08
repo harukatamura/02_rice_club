@@ -44,7 +44,7 @@ $s_staff = $_COOKIE['con_perf_staff'];
 //id取得
 $g_idxnum=$_GET['idxnum'];
 
-$arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱくコース" => "わんぱくコース", "ハッピーコース" => "ハッピーコース", "プラチナコース" => "プラチナコース");
+$arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱくコース" => "わんぱくコース", "ハッピーコース" => "ハッピーコース", "プラチナコース" => "プラチナコース", "直接入力" => "直接入力");
 
 ?>
 
@@ -260,6 +260,14 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 			document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
 			document.forms['frm'].submit();
 		}
+		//下書削除
+		function Delete_Sql(idx){
+			if(window.confirm('下書きを削除しますか？')){
+				var rowINX = 'do=delete_list&idxnum='+idx;
+				document.forms['frm'].action = './rice_mail_sql.php?' + rowINX;
+				document.forms['frm'].submit();
+			}
+		}
 	</script>
 </head>
 
@@ -294,7 +302,14 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 	</div>
 	<div id="container">
 		<form name="frm" method="post" enctype="multipart/form-data">
-			<? if($_GET['do'] == "reply"){
+			<?
+			$sign = "\n";
+			$sign .= "─────────────────\n";
+			$sign .= "日本電子機器補修協会　主食共同購入部\n";
+			$sign .= "　TEL：050-5272-9665\n";
+			$sign .= "　URL: https://jemtcnet.jp/kome/\n";
+			$sign .= "─────────────────\n";
+			 if($_GET['do'] == "reply"){
 				//テンプレート抽出
 				$query = "";
 				$query .= "SELECT A.title, A.contents, A.idxnum ";
@@ -315,10 +330,10 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 				}
 				//送信先アドレス
 				$to_add = "no-reply-kome@jemtcnet.jp";
-				$bcc_add = "tamura@jemtc.jp";
+				$bcc_add = "";
 				$title = "【精米倶楽部】JEMTCからのご案内";
 				$query = "";
-				$query .= "SELECT A.title, A.contents, A.idxnum, A.to_email, A.bcc, A.mail_group ";
+				$query .= "SELECT A.title, A.contents, A.idxnum, A.to_email, A.bcc, A.mail_group, A.file ";
 				$query .= " FROM php_rice_mail_list A ";
 				$query .= " WHERE A.idxnum = '".$g_idxnum."' ";
 				$query .= " ORDER BY A.idxnum ";
@@ -333,6 +348,8 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 					$contents = $row['contents'];
 					$title = $row['title'];
 					$mail_group = $row['mail_group'];
+					$filename = mb_substr($row['file'],11);
+					$file = $row['file'];
 				}
 				//返信定型文
 				$g_tmp = 0;
@@ -421,6 +438,12 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 								<textarea name="本文" id="contents" rows="20" style="width:100%; font-size:12px;"><?php echo $honbun ?></textarea>
 							</td>
 						</tr>
+						<tr>
+							<td class="tbd_tb_l">
+								<?= nl2br($sign); ?>
+							</td>
+						</tr>
+						<? if($p_staff=="田村"){ ?>
 						<form method="post">
 							<div class="box11">
 								<tr>
@@ -437,14 +460,28 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 								</tr>
 							</div>
 						</form>
+						<? } ?>
 					</table>
-					<table class="tbh">
-						<tr>
-							<td class="tbd_tb_c">
-								<button class="btn btn-default" style="position: absolute; left: 46%;" onClick="javascript:Mail_Check(<? echo $g_idxnum; ?>); return false;">送信内容確認</button>
-							</td>
-						</tr>
-					</table>
+					<? if($g_idxnum <> "" && $g_idxnum <> "undefind"){ ?>
+						<table class="tbh">
+							<tr>
+								<td class="tbd_tb_c">
+									<button class="btn btn-default" style="position: absolute; left: 40%;" onClick="javascript:Mail_Check(<? echo $g_idxnum; ?>); return false;">送信内容確認</button>
+									<button class="btn btn-default" style="position: absolute; left:50%;" onClick="javascript:Save_Sql(<? echo $g_idxnum; ?>);">下書保存</button>
+									<button class="btn btn-default" style="position: absolute; left:63%;" onClick="javascript:Delete_Sql(<? echo $g_idxnum; ?>);">削除</button>
+								</td>
+							</tr>
+						</table>
+					<? }else{ ?>
+						<table class="tbh">
+							<tr>
+								<td class="tbd_tb_c">
+									<button class="btn btn-default" style="position: absolute; left: 40%;" onClick="javascript:Mail_Check(<? echo $g_idxnum; ?>); return false;">送信内容確認</button>
+									<button class="btn btn-default" style="position: absolute; left:50%;" onClick="javascript:Save_Sql(<? echo $g_idxnum; ?>);">下書保存</button>
+								</td>
+							</tr>
+						</table>
+					<? } ?>
 					<table class="tbh">
 						<tr>
 							<td class="tbd_tb_r">
@@ -509,6 +546,8 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 						<tr>
 							<th class="tbd_th_l">
 								<br><p>本文</p>
+								<p style="text-align:left"><font color="red">※左記の文字列は使用不可のため、削除されます。「"」,「'」,「\」</font></p>
+								<p style="text-align:left"><font color="red">※署名は自動で挿入されますので入力しないでください。</font></p>
 							</th>
 						</tr>
 						<tr>
@@ -516,12 +555,26 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 								<textarea name="本文" id="contents" rows="20" style="width:100%; font-size:12px;"><? echo $_POST['本文'] ?></textarea>
 							</td>
 						</tr>
+						<tr>
+							<td class="tbd_tb_l">
+								<?= nl2br($sign); ?>
+							</td>
+						</tr>
 					</table>
 					<table class="tbh">
 						<tr>
+						<? if($g_idxnum <> "" && $g_idxnum <> "undefind"){ ?>
 							<td class="tbd_tb_c">
-								<button class="btn btn-default" style="position: absolute; left: 46%;" onClick="javascript:Mail_Check(<? echo $g_idxnum; ?>); return false;">送信内容確認</button>
+								<button class="btn btn-default" style="position: absolute; left:40%;" onClick="javascript:Mail_Check(<? echo $g_idxnum; ?>); return false;">送信内容確認</button>
+								<button class="btn btn-default" style="position: absolute; left:50%;" onClick="javascript:Save_Sql(<? echo $g_idxnum; ?>);">下書保存</button>
+								<button class="btn btn-default" style="position: absolute; left:63%;" onClick="javascript:Delete_Sql(<? echo $g_idxnum; ?>);">削除</button>
 							</td>
+						<? }else{ ?>
+							<td class="tbd_tb_c">
+								<button class="btn btn-default" style="position: absolute; left: 40%;" onClick="javascript:Mail_Check(<? echo $g_idxnum; ?>); return false;">送信内容確認</button>
+								<button class="btn btn-default" style="position: absolute; left:50%;" onClick="javascript:Save_Sql(<? echo $g_idxnum; ?>);">下書保存</button>
+							</td>
+						<?  } ?>
 						</tr>
 					</table>
 					<table class="tbh">
@@ -580,7 +633,7 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 						</tr>
 						<tr>
 							<td class="tbd_tb_l">
-								<pre><? echo return_value($main_text) ?></pre>
+								<pre><? echo return_value($main_text.$sign) ?></pre>
 								<textarea name="本文" style="display:none"><? echo return_value($main_text) ?></textarea>
 							</td>
 						</tr>
@@ -588,9 +641,9 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 					<table class="tbh">
 						<tr>
 							<td class="tbd_tb_c">
-								<button class="btn btn-default" style="position: absolute;left:43%" onClick="javascript:Mail_Redo(<? echo $g_idxnum; ?>); return false;">戻る</button>
-								<button class="btn btn-default" style="position: absolute;" onClick="javascript:Mail_Reply(<? echo $g_idxnum; ?>);">メール送信</button>
-								<button class="btn btn-default" style="position: absolute; left:61%;" onClick="javascript:Save_Sql(<? echo $g_idxnum; ?>);">下書保存</button>
+								<button class="btn btn-default" style="position: absolute;left:40%" onClick="javascript:Mail_Redo(<? echo $g_idxnum; ?>); return false;">戻る</button>
+								<button class="btn btn-default" style="position: absolute;left:46%" onClick="javascript:Mail_Reply(<? echo $g_idxnum; ?>);">メール送信</button>
+								<button class="btn btn-default" style="position: absolute; left:55%;" onClick="javascript:Save_Sql(<? echo $g_idxnum; ?>);">下書保存</button>
 						</tr>
 					</table>
 					<table class="tbh">
@@ -601,6 +654,73 @@ $arr_grp = array("全員" => "精米倶楽部継続会員全員", "わんぱく�
 						</tr>
 					</table>
 				</div>
+			<?php } else if($_GET['do'] == "show") {
+				$query = "";
+				$query .= "SELECT A.title, A.contents, A.idxnum, A.to_email, A.bcc, A.mail_group, A.send_dt, A.file ";
+				$query .= " FROM php_rice_mail_list A ";
+				$query .= " WHERE A.idxnum = '".$g_idxnum."' ";
+				$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+				$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+				if (!($rs = $db->query($query))) {
+					$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+				}
+				while ($row = $rs->fetch_array()) { ?>
+					<div class="row">
+						<h1>送信済メーリス内容確認</h1>
+					</div>
+					<div id="main>"
+						<table class="tbh">
+							<tr>
+								<th class="tbd_th_l">
+									<p>＜送信先＞</p>
+									<pre><? echo $row['mail_group'] ?></pre>
+									<pre><? echo $row['bcc'] ?></pre>
+								</th>
+							</tr>
+							<tr>
+								<th class="tbd_th_l">
+									<p>＜送信日時＞</p>
+									<pre><? echo date('Y/n/j H:i:s', strtotime($row['send_dt'])) ?></pre>
+								</th>
+							</tr>
+							<tr>
+								<th class="tbd_th_l">
+									<p>＜件名＞</p>
+									<pre><? echo $row['title'] ?></pre>
+								</th>
+							</tr>
+							<tr>
+								<th class="tbd_th_l">
+									<p>＜内容＞</p>
+								</th>
+							</tr>
+							<tr>
+								<td class="tbd_tb_l">
+									<pre><? echo return_value($row['contents']) ?></pre>
+								</td>
+							</tr>
+							<? if($row['file'] <> ""){ ?>
+								<tr>
+									<th class="tbd_th_l">
+										<p>＜添付ファイル＞</p>
+									</th>
+								</tr>
+								<tr>
+									<td class="tbd_tb_l">
+										<p><a href="<? echo $row['file'] ?>" target="_blank"><? echo $row['file'] ?></a></p>
+									</td>
+								</tr>
+							<?  }?>
+						</table>
+						<table class="tbh">
+							<tr>
+								<td class="tbd_tb_r">
+									<p style="text-align:right; font-size:12px;"><a href="Javascript:window.close()">閉じる</a></p>
+								</td>
+							</tr>
+						</table>
+					</div>
+				<? } ?>
 			<? } ?>
 		</form>
 	</div>

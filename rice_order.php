@@ -587,8 +587,8 @@
 				<div id="formWrap">
 					<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
 						<p style="text-align:right">
-							<?php if($p_staff == "田村"){ ?><a href="./rice_slip.php" class="btn-border-b" target="_blank">伝票発行</a>　<? } ?>
-							<a href="./rice_mail.php" class="btn-border-b" target="_blank">メール問合一覧</a>　<a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a>
+							<?php if($p_staff == "田村"){ ?><a href="./rice_slip.php" class="btn-border-b" target="_blank">伝票発行</a>　<br><? } ?>
+							<a href="./rice_mail_list.php" class="btn-border-b" target="_blank">配信</a>　<a href="./rice_mail.php" class="btn-border-b" target="_blank">メール問合一覧</a>　<a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a>
 						</p>
 						<h2>検索条件</h2><br>
 						<?php list($week, $p_date1, $p_date2, $p_staff) = $comm->getcalender($db,1,6); ?>
@@ -607,6 +607,7 @@
 											$query .= " WHERE status='申込' ";
 											$query .=" AND insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)";
 											$query .=" AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)";
+											$query .= " AND delflg='0' ";
 											$query .= " GROUP BY category ";
 											$query .= " ORDER BY category";
 											$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
@@ -694,6 +695,7 @@
 								FROM php_rice_subscription A 
 								LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
 								WHERE A.status='申込' 
+								 AND A.delflg='0' 
 								 AND A.insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)
 								 AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)
 								GROUP BY A.category, A.weight 
@@ -747,6 +749,7 @@
 								FROM php_rice_subscription A 
 								LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
 								WHERE A.status='申込' 
+								 AND A.delflg='0' 
 								 AND A.insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)
 								 AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)
 								GROUP BY DATE(A.insdt), A.category, A.weight 
