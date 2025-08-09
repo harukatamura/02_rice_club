@@ -172,6 +172,10 @@
 		width: 100%;
 		padding-top: 4px;
 	}
+	th {
+		position: sticky;
+		top: 0;
+	}
 	/* --- ヘッダーセル（th） --- */
 	th.tbd_th_p1 {
 	width:100px;
