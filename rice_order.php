@@ -623,10 +623,22 @@
 												$all_cnt += $row['cnt'];
 												$all_weight += $row['weight'];
 											}
-											if($all_cnt > 200){
-												$px = 3.5;
+											if($all_cnt > 400){
+												$px = 0.5;
+											}else if($all_cnt > 300){
+												$px = 0.67;
+											}else if($all_cnt > 250){
+												$px = 0.80;
+											}else if($all_cnt > 200){
+												$px = 1.0;
+											}else if($all_cnt > 150){
+												$px = 1.25;
 											}else if($all_cnt > 100){
-												$px = 5;
+												$px = 2;
+											}else if($all_cnt > 70){
+												$px = 3;
+											}else if($all_cnt > 50){
+												$px = 4;
 											}else{
 												$px = 7.5;
 											}
@@ -737,6 +749,90 @@
 								<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
 								<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
 							</tr>
+						</table><br><br><br>
+						<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+							<tr><td class="category"><strong>地域別実績</strong></td></tr>
+						</table><br>
+						<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+							<tr style="background:#ccccff">
+								<th class="tbd_th_p3" COLSPAN="2"><strong>地域</strong></th>
+								<th class="tbd_th_p1"><strong>件数(件)</strong></th>
+								<th class="tbd_th_p1"><strong>量(kg)</strong></th>
+								<th class="tbd_th_p1"><strong>小計(円)</strong></th>
+							</tr>
+							<?php
+							// ================================================
+							// ■　□　■　□　全体表示　■　□　■　□
+							// ================================================
+							//----- データ抽出
+							$query = " 
+								SELECT
+								A.address1,
+								  CASE
+								    -- 「市」「区」「村」「郡」の最小位置を探す
+								    WHEN LEAST(
+								      IF(LOCATE('市', A.area) = 0, 9999, LOCATE('市', A.area)),
+								      IF(LOCATE('区', A.area) = 0, 9999, LOCATE('区', A.area)),
+								      IF(LOCATE('村', A.area) = 0, 9999, LOCATE('村', A.area)),
+								      IF(LOCATE('郡', A.area) = 0, 9999, LOCATE('郡', A.area))
+								    ) = 9999 THEN NULL
+								    ELSE
+								      LEFT(
+								        A.area,
+								        LEAST(
+								          IF(LOCATE('市', A.area) = 0, 9999, LOCATE('市', A.area)),
+								          IF(LOCATE('区', A.area) = 0, 9999, LOCATE('区', A.area)),
+								          IF(LOCATE('村', A.area) = 0, 9999, LOCATE('村', A.area)),
+								          IF(LOCATE('郡', A.area) = 0, 9999, LOCATE('郡', A.area))
+								        )
+								      )
+								  END AS city_town,
+								  
+								  COUNT(B.category) AS cnt,
+								  SUM(B.weight) AS weight,
+								  SUM(B.tanka) AS sumkin
+
+								FROM php_rice_subscription B 
+								LEFT OUTER JOIN php_rice_personal_info A ON B.personal_idxnum = A.idxnum
+								WHERE B.delflg = 0
+								AND B.date_s BETWEEN CAST( '$p_date1' AS DATE) AND CAST(  '$p_date2' AS DATE)
+
+								GROUP BY city_town
+								ORDER BY A.postcd1;
+								";
+							$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+							$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+							if (!($rs = $db->query($query))) {
+								$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+							}
+							//初期化
+							$sum_weight = 0;
+							$sum_cnt = 0;
+							$sum_cash = 0;
+							$g_address = "";
+							while ($row = $rs->fetch_array()) {
+								if(($cnt % 2) == 0){ ?>
+									<tr style="background-color:#f5f5f5;">
+								<? }else{ ?>
+									<tr style="background-color:#ffffff;">
+								<? } ?>
+									<? if($g_address <> $row['address1']){ ?>
+										<td class="tbd_td_p4_l"><? echo $row['address1'] ?></td>
+									<? }else {?>
+										<td class="tbd_td_p4_l"></td>
+									<? } ?>
+									<td class="tbd_td_p4_l"><? echo $row['city_town'] ?></td>
+									<td class="tbd_td_p3_r"><? echo $row['cnt']; ?></td>
+									<td class="tbd_td_p3_r"><? echo $row['weight']; ?></td>
+									<td class="tbd_td_p3_r"><? echo number_format($row['sumkin']); ?></td>
+								</tr>
+								<? 
+								++$cnt;
+								$sum_weight += $row['weight'];
+								$sum_cnt += $row['cnt'];
+								$sum_cash += $row['sumkin'];
+								$g_address = $row['address1'];
+							} ?>
 						</table><br><br><br>
 						<h2>日別実績　（<?= date('Y/n/j', strtotime($p_date1))."～".date('Y/n/j', strtotime($p_date2)) ?>）</h2><br>
 							<?php
