@@ -54,7 +54,6 @@ $result = $dba->mysql_con($db);
 			$query .= " LEFT OUTER JOIN php_rice_subscription C ON A.subsc_idxnum=C.subsc_idxnum ";
 			$query .= " LEFT OUTER JOIN php_rice_personal_info B ON C.personal_idxnum=B.idxnum ";
 			$query .= " WHERE B.delflg=0 ";
-			$query .= " AND A.delflg=0 ";
 			$query .= " AND B.email<>'' ";
 			$query .= " AND DATE_FORMAT(A.delivery_date, '%Y-%m')='".date('Y-m',strtotime($today))."'";
 			if($m_send <> "全員"){

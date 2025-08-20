@@ -147,7 +147,7 @@
 	// ================================================
 	// ■　□　■　□　出勤関連設定　■　□　■　□
 	// ================================================
-	$notice[] =  $this_week . "週　【スケジュール】<a href='./schedule_today.php' target=_blank>出勤状況</a>　<a href='./rest_list.php' target=_blank>休憩予定</a>　<a href='./schedule2.php' target=_blank>全体スケジュール</a>　<a href='./plan_schedule_list.php' target=_blank>当日作業一覧</a>　<a href='./manual/block/block_menu.php' target=_blank>対応注意ユーザー</a>";
+	$notice[] =  $this_week . "週　【スケジュール】<a href='./schedule_today.php' target=_blank>出勤状況</a>　<a href='./shift_schedule.php' target=_blank>電話シフト表</a>　<a href='./schedule2.php' target=_blank>全体スケジュール</a>　<a href='./plan_schedule_list.php' target=_blank>当日作業一覧</a>　<a href='./manual/block/block_menu.php' target=_blank>対応注意ユーザー</a>";
 	if($p_compcd == "J" || $p_staff=="JEMTC") {
 		$notice[] =  date('Y/n/j') . "　【実績】<a href='./plan_kanri2.php?p_date=".date('Y-m-d')."&p_staff=".$p_staff."' target=_blank>作業予定</a>　<a href='./performance_list.php' target=_blank>実績一覧</a>　<a href='./response.php' target=_blank>対応状況一覧</a>";
 	} else {

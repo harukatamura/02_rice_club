@@ -661,7 +661,34 @@
 	    outline-style: auto;
 	    outline-width: 5px;
 	}
+	.header_logo {
+		vertical-align: middle;
+		font-size:64px;
+	}
 
+	/*--ボタンデザイン--*/
+	.btn-border-b {
+	display: inline-block;
+	text-align: left;
+	border: 2px solid #00608d;
+	font-size: 24px;
+	text-decoration: none;
+	font-weight: bold;
+	padding: 20px 20px;
+	border-radius: 4px;
+	transition: .4s;
+	background-color: #bbe2f1;
+	color: #0073a8;
+	}
+	.btn-border-b:hover,
+	.btn-border-b::before,
+	.btn-border-b::after,
+	.btn-border-b:hover:before,
+	.btn-border-b:hover:after {
+	border-color: #00608d;
+	background-color: #008db7;
+	color: #fff;
+	}
 	</style>
 </head>
 
@@ -677,11 +704,19 @@
 	<div id="contents">
 		<div id="main">
 			<?php echo $prgmemo; ?>
-			<p style="color:red">
-				※伝票を発行された方は、必ず以下の3点をおこなってください。<br>
-				　①出力したデータの担当者・日付・型番・数を確認した上で予約発送実績登録<br>
-				　②佐川伝票データの取込<a href="./pdf/yamato_manual_ns.pdf" target="_blank">（マニュアル）</a>　<a href="./sagawa_upload.php" target="_blank">取込画面</a><br>
-			</p>
+			<table style="width:95%;">
+				<tr>
+					<td>
+						<p style="color:red">
+							※伝票を発行された方は、必ず以下の3点をおこなってください。<br>
+							　①佐川伝票データの取込<br>
+						</p>
+					</td>
+					<td style="text-align:right;">
+						<a href="./rice_slip_upload.php" class="btn-border-b" target="_blank">伝票番号取込</a>
+					</td>
+				</tr>
+			</table>
 			<div id="formWrap">
 				<form name="frm" method = "post" action="./rice_slip.php">
 					<h2 id="sub1">検索条件</h2><br>

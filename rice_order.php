@@ -795,10 +795,10 @@
 								FROM php_rice_subscription B 
 								LEFT OUTER JOIN php_rice_personal_info A ON B.personal_idxnum = A.idxnum
 								WHERE B.delflg = 0
-								AND B.date_s BETWEEN CAST( '$p_date1' AS DATE) AND CAST(  '$p_date2' AS DATE)
+								AND B.insdt BETWEEN CAST( '$p_date1' AS DATE) AND CAST(  '$p_date2' AS DATE)
 
 								GROUP BY city_town
-								ORDER BY A.postcd1;
+								ORDER BY A.postcd1, A.postcd2;
 								";
 							$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 							$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
@@ -833,7 +833,13 @@
 								$sum_cash += $row['sumkin'];
 								$g_address = $row['address1'];
 							} ?>
-						</table><br><br><br>
+<!--							<tr style="background-color:#d3d3d3;">
+								<td class="tbd_td_p4_l" COLSPAN="2">合計</td>
+								<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
+								<td class="tbd_td_p4_r"><?php echo number_format($sum_weight) ?>kg</td>
+								<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
+							</tr>
+-->						</table><br><br><br>
 						<h2>日別実績　（<?= date('Y/n/j', strtotime($p_date1))."～".date('Y/n/j', strtotime($p_date2)) ?>）</h2><br>
 							<?php
 							// ================================================
