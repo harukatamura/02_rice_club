@@ -435,7 +435,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					$query .= " AND B.detail_idxnum = C.max_detail_idxnum) as D";
 					$query .= " ON E.mail_idxnum = D.mail_idxnum";
 					$query .= " WHERE DATE(E.insdt) = CURDATE()";
-					$query .= " AND A.delflg =0";
 					$query .= " AND E.mail_status = 8";
 					if($p_compcd == "T"){
 						$query .= " AND A.correstaf = 'ジェネシス'";
@@ -461,7 +460,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					if($p_compcd == "T"){
 						$query .= " AND A.correstaf = 'ジェネシス'";
 					}
-					$query .= " AND A.delflg =0";
 					$query .= " ORDER BY upddt DESC, mail_idxnum DESC ";
 					$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 					$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);

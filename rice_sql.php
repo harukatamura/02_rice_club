@@ -105,6 +105,10 @@ if($empty_flag != 1){
 			$flg = mysql_rice_update($db);
 			header("Location: ".$thanksPage1."?idx=".$g_idx."&flg=".$flg);
 		}
+		if($do == "cancel"){
+			$flg = mysql_rice_cancel($db);
+			header("Location: ".$thanksPage1."?idx=".$g_idx."&flg=".$flg);
+		}
 		//データベース切断
 		if ($result) { $dba->mysql_discon($db); }
 	}
@@ -268,6 +272,69 @@ function mysql_rice_update($db) {
 			$comm->ouputlog("☆★☆データ更新エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 			return 2;
 		}
+	}
+	
+	$comm->ouputlog("===データ更新処理完了===", $prgid, SYS_LOG_TYPE_DBUG);
+	return 1;
+}
+//--------------------------------------------------------------------------------------------------
+// ■メソッド名
+//   mysql_rice_cancel
+//
+// ■概要
+//   精米倶楽部　キャンセル登録
+//
+// ■引数
+//   第一引数：データベース
+//
+//--------------------------------------------------------------------------------------------------
+function mysql_rice_cancel($db) {
+	//グローバル変数
+	global $comm;
+	global $dba;
+	//対象テーブル
+	global $table_p;
+	global $table_s;
+	global $table_y;
+	//対象プログラム
+	global $prgid;
+	//引数
+	global $today;
+	global $g_idx;
+	global $p_staff;
+	global $g_post;
+	$query = "";
+	$update = "";
+	$update_p = "";
+	$update_s = "";
+	$update_y = "";
+	
+	$comm->ouputlog("mysql_rice_cancelログ出力", $prgid, SYS_LOG_TYPE_DBUG);
+
+	//共通項目
+	$_update = " UPDATE ".$table_p." A";
+	$_update .= " LEFT OUTER JOIN  ".$table_s." B ON A.idxnum=B.personal_idxnum ";
+	$_update .= " LEFT OUTER JOIN  ".$table_y." C ON B.subsc_idxnum=C.subsc_idxnum ";
+	$_update .= " SET ";
+	$_update .= " A.upddt = '".$today."'";
+	$_update .= " ,A.updcount = A.updcount + 1";
+	$_update .= " ,A.updstaff = '".$p_staff."'";
+	$_update .= " ,A.delflg = '1' ";
+	$_update .= " ,B.upddt = '".$today."'";
+	$_update .= " ,B.updcount = B.updcount + 1";
+	$_update .= " ,B.updstaff = '".$p_staff."'";
+	$_update .= " ,B.delflg = '1' ";
+	$_update .= " ,C.upddt = '".$today."'";
+	$_update .= " ,C.updcount = C.updcount + 1";
+	$_update .= " ,C.updstaff = '".$p_staff."'";
+	$_update .= " ,C.delflg = '1' ";
+	$_update .= " WHERE A.idxnum ='".$g_idx."'";
+	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
+	$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
+	//データ追加実行
+	if (! $db->query($_update)) {
+		$comm->ouputlog("☆★☆データ更新エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+		return 2;
 	}
 	
 	$comm->ouputlog("===データ更新処理完了===", $prgid, SYS_LOG_TYPE_DBUG);

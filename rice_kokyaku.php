@@ -76,8 +76,28 @@
 		$comm->ouputlog("都道府県=". $row[0], $prgid, SYS_LOG_TYPE_DBUG);
 	}
 	$timelist_r = array("8～12時" => "0812", "12～14時" => "1214", "14～16時" => "1416", "16～18時" => "1618", "18～20時" => "1820", "18～21時" => "1821", "19～21時" => "1921", "指定なし" => "");
-	$category_list = array("わんぱくコース", "ハッピーコース", "プラチナコース");
-	$weight_list = array("5" => "5kg", "10" => "10kg", "15" => "15kg", "20" => "20kg", "25" => "25kg", "30" => "30kg", );
+	$query = "
+		 SELECT A.category, A.weight, A.tanka
+		 FROM php_rice_category A
+		 WHERE A.delflg = 0
+		 ORDER BY A.idxnum
+		";
+	$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+	$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+	if (!($rs = $db->query($query))) {
+		$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+	}
+	while ($row = $rs->fetch_array()) {
+		$category_list[] = $row['category'];
+		$weight_list[$row['weight']] = $row['weight']."kg";
+		$tanka_list[$row['category']][$row['weight']] = $row['tanka'];
+	}
+	//配列の整理
+	$category_list = array_unique($category_list);
+	ksort($weight_list);
+	//配列をjsonに変換
+	$json_tanka_list = json_encode($tanka_list);
+
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html lang="ja">
@@ -595,6 +615,23 @@
 			display: flex;
 			width: 100%;
 		}
+		/* 青系シンプルボタン */
+		.button-blue {
+		    background-color: #3498db; /* メインの青 */
+		    color: #ffffff;           /* 文字色は白 */
+		    padding: 3px 20px;        /*  */
+		    margin: 3px 0px;        /*  */
+		    border: none;             
+		    border-radius: 5px;       
+		    font-size: 16px;          /* 元の文字サイズを維持 */
+		    cursor: pointer;
+		    transition: background-color 0.3s ease;
+		}
+
+		/* ホバー時 */
+		.button-blue:hover {
+		    background-color: #2980b9; /* 少し濃い青 */
+		}
 	</style>
 		<script>
 	    $(function(){
@@ -609,6 +646,9 @@
 	</script>
 
 	<script type="text/javascript">
+		//配列を変換
+		var json_tanka_list = JSON.parse('<? echo $json_tanka_list; ?>');
+		
 		function Mclk_Update(g_idx){
 			var status = document.forms['frm'].elements["状態"].value;
 			let name = $('#name').val();
@@ -670,6 +710,98 @@
 				return false;
 			}
 		}
+		function Mclk_Cancel(g_idx){
+			var status = document.forms['frm'].elements["状態"].value;
+			if(status == 9){
+				//伝票発行済みの場合はアラートで確認
+				Swal.fire({
+					title: '発送準備中のデータがあります',
+					text: 'キャンセル登録後は必ずJEMTC担当者にご連絡ください',
+					type: 'warning',
+					showCancelButton: true,
+					confirmButtonText: 'ｷｬﾝｾﾙ登録',
+					cancelButtonText: 'やめる'  , 
+					allowOutsideClick : false   //枠外クリックは許可しない
+					}).then((result) => {
+					if (result.value) {
+						document.forms['frm'].action = './rice_sql.php?do=cancel&idx='+g_idx;
+						document.forms['frm'].submit();
+						return false;
+					}else{
+						return false;
+					}
+				});
+			}else{
+				//伝票発行済みの場合はアラートで確認
+				Swal.fire({
+					title: 'キャンセル登録します',
+					text: '次回以降すべての配送をキャンセルします',
+					type: 'warning',
+					showCancelButton: true,
+					confirmButtonText: 'ｷｬﾝｾﾙ登録',
+					cancelButtonText: 'やめる'  , 
+					allowOutsideClick : false   //枠外クリックは許可しない
+					}).then((result) => {
+					if (result.value) {
+						document.forms['frm'].action = './rice_sql.php?do=cancel&idx='+g_idx;
+						document.forms['frm'].submit();
+						return false;
+					}else{
+						return false;
+					}
+				});
+			}
+		}
+		function Set_tanka(i){
+			var category = document.forms['frm'].elements["コース"+i].value;
+			var weight = document.forms['frm'].elements["量"+i].value;
+			if(category == "わんぱくコース" && (weight == 5 || weight == 15 || weight == 25)){
+				//伝票発行済みの場合はアラートで確認
+				Swal.fire({
+					title: 'エラー',
+					text: 'わんぱくコースは10kg、20kg、30kgのいずれかを選択してください。',
+					type: 'warning',
+					showCancelButton: false,
+					confirmButtonText: 'OK',
+					allowOutsideClick : false   //枠外クリックは許可しない
+					}).then((result) => {
+					if (result.value) {
+						document.forms['frm'].elements["金額"+i].value = 0;
+					}
+				});
+			}else{
+				var g_tanka = json_tanka_list[category][weight];
+				document.forms['frm'].elements["金額"+i].value = g_tanka;
+			}
+		}
+		function Copy_data(g_columm, i){
+			var set_data = document.forms['frm'].elements[g_columm+i].value;
+			var set_weight = document.forms['frm'].elements["量"+i].value;
+			var set_tanka = document.forms['frm'].elements["金額"+i].value;
+			var max_row = document.forms['frm'].elements["最大行"].value;
+			Swal.fire({
+				title: g_columm + 'のデータを一括で変更します',
+				text: '次回以降すべての配送データを変更します。※データが反映されていることを確認後、更新ボタンを押してください。',
+				type: 'warning',
+				showCancelButton: true,
+				confirmButtonText: '反映',
+				cancelButtonText: 'やめる'  , 
+				allowOutsideClick : false   //枠外クリックは許可しない
+				}).then((result) => {
+				if (result.value) {
+					for(j=i+1; j<=max_row; ++j){
+						document.forms['frm'].elements[g_columm+j].value = set_data;
+						if(g_columm == "コース"){
+							document.forms['frm'].elements["量"+j].value = set_weight;
+							document.forms['frm'].elements["金額"+j].value = set_tanka;
+						}
+					}
+					return false;
+				}else{
+					return false;
+				}
+			});
+		}
 	</script>
 	<script src="https://ajaxzip3.github.io/ajaxzip3.js" charset="UTF-8"></script>
 </head>
@@ -704,7 +836,7 @@
 						//データを取得
 						$query = "
 							 SELECT A.idxnum, A.name, A.address1, A.address2, A.address3, A.postcd1, A.postcd2, A.phonenum1, A.phonenum2
-							 , A.email, B.remarks, A.receipt, A.ruby
+							 , A.email, B.remarks, A.receipt, A.ruby, B.delflg, A.sales_way, A.introduction
 							 , B.category, B.weight, B.tanka as s_tanka, B.date_s, B.date_e
 							 FROM php_rice_subscription B
 							 LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum 
@@ -726,6 +858,24 @@
 									?>
 									<input name="check2" type="hidden" value="<?php echo $check ?>">
 								</div>
+								<? if($row['delflg'] == 1){ ?>
+									<div class="col-lg-12">
+										<p style="font-size:1.5em; color:red; font-weight:bold;">削除済のデータです</p>
+									</div>
+								<? } ?>
+								<?if($row['sales_way'] == "introduction"){ ?>
+									<div class="col-lg-12">
+										<h4>紹介者様情報</h4>
+										<hr>
+										<!-- 名前入力 -->
+										<div class="col-lg-6">
+											<div class="form-group">
+												<label>氏名（漢字）（16文字以内）</label>
+												<input type="text" id="intro_name" class="form-control" name="紹介者" value="<?php echo $row['introduction'] ?>">
+											</div>
+										</div>
+									</div>
+								<? } ?>
 								<div class="col-lg-12">
 									<h4>お客様情報</h4>
 									<hr>
@@ -845,9 +995,10 @@
 										<?
 										$query2 = "
 											SELECT 
-											 C.category, C.tanka, C.weight, C.stopflg, C.output_flg, C.slipnumber, C.delivery_status, C.delivery_date, C.specified_times, C.ship_idxnum
+											 C.category, C.tanka, C.weight, C.stopflg, C.output_flg, C.slipnumber, C.ship_date, C.delivery_date, C.specified_times, C.ship_idxnum
 											 , CASE
-												  WHEN C.delivery_status <>'' THEN C.delivery_status
+												  WHEN C.receive_date <>'0000-00-00' THEN CONCAT('配達完了<br>(',date_format(C.receive_date, '%y/%c/%e'),')') 
+												  WHEN C.ship_date <>'0000-00-00 00:00:00' THEN CONCAT('配送中<br>(',date_format(C.ship_date, '%y/%c/%e'),')') 
 												  WHEN C.output_flg > 0 THEN '配送準備中'
 												  WHEN C.stopflg > 0 THEN '休止'
 												  ELSE '注文受付'
@@ -863,9 +1014,15 @@
 										}
 										$i = 0;
 										$status = 0;
+										$next = 0;
 										while ($row2 = $rs2->fetch_array()) { 
-											if($row2['status'] <> "注文受付"){
+											if($row2['status'] <> "注文受付" && mb_substr($row2['status'],0,4) <> "配達完了"){
 												$status = 9;
+											}
+											if($next == 1){
+												$next = 2;
+											}if($next == 0 && $row2['status'] == "注文受付"){
+												$next = 1;
 											}
 											$min_date = date('Y-m-26', strtotime($row2['delivery_date']));
 											$max_date = date('Y-m-d', strtotime('+3 days', strtotime($min_date)));
@@ -879,16 +1036,19 @@
 														<?= $row2['status']; ?>
 													</td>
 													<td style="vertical-align:middle; text-align:right">
-														<select name="コース<?= $i; ?>">
+														<select name="コース<?= $i; ?>" onchange="Set_tanka(<?= $i; ?>)">
 															<? foreach($category_list as $val){ ?>
 																<option value="<?= $val; ?>" <? if($val == $row2['category']){echo "selected='selected'";} ?> ><?= $val; ?></option>
 															<? } ?>
 														</select>
-														<select name="量<?= $i; ?>">
+														<select name="量<?= $i; ?>" onchange="Set_tanka(<?= $i; ?>)">
 															<? foreach($weight_list as $key => $val){ ?>
 																<option value="<?= $key; ?>" <? if($key == $row2['weight']){echo "selected='selected'";} ?> ><?= $val; ?></option>
 															<? } ?>
-														</select>
+														</select><br>
+														<? if($next == 1 && $p_staff == "田村"){ ?>
+															<input type="button" class="button-blue" value="一括反映" onclick="Copy_data('コース', <?= $i; ?>)">
+														<? } ?>
 													</td>
 													<td style="vertical-align:middle; text-align:right">
 														<input type="date" name="配送日<?= $i; ?>" value="<?= $row2['delivery_date']; ?>" min="<?= $min_date; ?>" max="<?= $max_date; ?>">
@@ -896,7 +1056,10 @@
 															<? foreach($timelist_r as $key => $val){ ?>
 																<option value="<?= $val; ?>" <? if($val == $row2['specified_times']){echo "selected='selected'";} ?> ><?= $key; ?></option>
 															<? } ?>
-														</select>
+														</select><br>
+														<? if($next == 1 && $p_staff == "田村"){ ?>
+															<input type="button" class="button-blue" value="一括反映" onclick="Copy_data('到着指定時間帯', <?= $i; ?>)">
+														<? } ?>
 													</td>
 													<td style="text-align:right; vertical-align:middle;">
 														<input type="text" pattern="^[0-9]+$" name="金額<? echo $i ?>" size="6" value="<? echo $row2['tanka'] ?>"> 円
@@ -915,7 +1078,7 @@
 														<input type="text" name="end<?= $i; ?>">
 													</td>
 											<? }else{ ?>
-												<? if($row2['status'] == "配送準備中"){ ?>
+												<? if($row2['status'] == "配送準備中" || mb_substr($row2['status'],0,3) == "配送中"){ ?>
 													<tr style="background-color:#ffff00;">
 												<? }else{ ?>
 													<tr style="background-color:#a9a9a9;">
@@ -938,7 +1101,7 @@
 														<? echo number_format($row2['tanka']); ?>円
 													</td>
 													<td style="text-align:right; vertical-align:middle;">
-														<? echo $row2['slipnumber']; ?>
+														<a href="https://k2k.sagawa-exp.co.jp/p/web/okurijosearch.do?okurijoNo=<?= $row2['slipnumber'] ?>" target="_blank"><?= $row2['slipnumber'] ?></a>
 													</td>
 											<? } ?>
 											</tr>
@@ -955,6 +1118,13 @@
 											<input type="button" value="更新" class="btn-info btn-border" onclick="javascript:Mclk_Update(<? echo $g_idx ?>)">
 										</div>
 									</div>
+									<? if($p_staff == "田村"){ ?> 
+									<div class="col-lg-4" style="text-align:right;">
+										<div class="form-group" style="text-align:right;">
+											<input type="button" value="ｷｬﾝｾﾙ登録" class="btn-info btn-border" onclick="javascript:Mclk_Cancel(<? echo $g_idx ?>)">
+										</div>
+									</div>
+									<? } ?> 
 									<div class="col-lg-4" style="text-align:right;">
 										<div class="form-group" style="text-align:right;">
 											<a href="telorder_list.php"><input type="button" value="閉じる" class="btn-info btn-border" onClick="window.close()"></a>

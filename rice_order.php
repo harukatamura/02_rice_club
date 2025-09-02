@@ -605,8 +605,8 @@
 											$query = "SELECT category, SUM(weight) as weight, COUNT(*) as cnt ";
 											$query .= " FROM php_rice_subscription ";
 											$query .= " WHERE status='申込' ";
-											$query .=" AND insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)";
-											$query .=" AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)";
+											$query .=" AND DATE(insdt) >=" . sprintf("'%s'", $p_date1) ;
+											$query .=" AND DATE(insdt) <=" . sprintf("'%s'", $p_date2);
 											$query .= " AND delflg='0' ";
 											$query .= " GROUP BY category ";
 											$query .= " ORDER BY category";
@@ -708,8 +708,8 @@
 								LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
 								WHERE A.status='申込' 
 								 AND A.delflg='0' 
-								 AND A.insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)
-								 AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)
+								 AND DATE(A.insdt) >=" . sprintf("'%s'", $p_date1) . "
+								 AND DATE(A.insdt) <=" . sprintf("'%s'", $p_date2) . " 
 								GROUP BY A.category, A.weight 
 								ORDER BY A.category, A.weight
 							";
@@ -795,8 +795,7 @@
 								FROM php_rice_subscription B 
 								LEFT OUTER JOIN php_rice_personal_info A ON B.personal_idxnum = A.idxnum
 								WHERE B.delflg = 0
-								AND B.insdt BETWEEN CAST( '$p_date1' AS DATE) AND CAST(  '$p_date2' AS DATE)
-
+								AND DATE(B.insdt) >= '$p_date1'  AND DATE(B.insdt) <= '$p_date2' 
 								GROUP BY city_town
 								ORDER BY A.postcd1, A.postcd2;
 								";
@@ -833,13 +832,13 @@
 								$sum_cash += $row['sumkin'];
 								$g_address = $row['address1'];
 							} ?>
-<!--							<tr style="background-color:#d3d3d3;">
+							<tr style="background-color:#d3d3d3;">
 								<td class="tbd_td_p4_l" COLSPAN="2">合計</td>
 								<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
 								<td class="tbd_td_p4_r"><?php echo number_format($sum_weight) ?>kg</td>
 								<td class="tbd_td_p4_r" COLSPAN="2"><?php echo number_format($sum_cash) ?>円</td>
 							</tr>
--->						</table><br><br><br>
+						</table><br><br><br>
 						<h2>日別実績　（<?= date('Y/n/j', strtotime($p_date1))."～".date('Y/n/j', strtotime($p_date2)) ?>）</h2><br>
 							<?php
 							// ================================================
@@ -852,10 +851,9 @@
 								LEFT OUTER  JOIN php_rice_category B ON A.category=B.category AND A.weight=B.weight 
 								WHERE A.status='申込' 
 								 AND A.delflg='0' 
-								 AND A.insdt BETWEEN CAST(" . sprintf("'%s'", $p_date1) . " AS DATE)
-								 AND CAST(" . sprintf("'%s'", $p_date2) . " AS DATE)
+								AND DATE(A.insdt) >= '$p_date1'  AND DATE(A.insdt) <= '$p_date2' 
 								GROUP BY DATE(A.insdt), A.category, A.weight 
-								ORDER BY DATE(A.insdt), A.category, A.weight
+								ORDER BY DATE(A.insdt) DESC, A.category, A.weight
 							";
 							$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 							$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);

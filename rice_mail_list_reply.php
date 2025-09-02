@@ -48,7 +48,26 @@ $result = $dba->mysql_con($db);
 		$sign .= "─────────────────\n";
 
 		//送信先を取得
-		if($m_send <> "直接入力"){
+		if($m_send == "固定電話"){
+			$query = " SELECT GROUP_CONCAT(B.email separator  ',') as bcc ";
+			$query .= " FROM php_rice_shipment A ";
+			$query .= " LEFT OUTER JOIN php_rice_subscription C ON A.subsc_idxnum=C.subsc_idxnum ";
+			$query .= " LEFT OUTER JOIN php_rice_personal_info B ON C.personal_idxnum=B.idxnum ";
+			$query .= " WHERE B.delflg=0 ";
+			$query .= " AND B.email<>'' ";
+			$query .= " AND  B.phonenum1 NOT LIKE '070%' ";
+			$query .= " AND  B.phonenum1 NOT LIKE '080%' ";
+			$query .= " AND  B.phonenum1 NOT LIKE '090%' ";
+			$query .= " AND DATE_FORMAT(A.delivery_date, '%Y-%m')='".date('Y-m',strtotime($today))."'";
+			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+			if (!($rs = $db->query($query))) {
+				$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+			}
+			while ($row = $rs->fetch_array()) {
+				$m_bcc = $m_bcc.",".$row['bcc'];
+			}
+		}else if($m_send <> "直接入力"){
 			$query = " SELECT GROUP_CONCAT(B.email separator  ',') as bcc ";
 			$query .= " FROM php_rice_shipment A ";
 			$query .= " LEFT OUTER JOIN php_rice_subscription C ON A.subsc_idxnum=C.subsc_idxnum ";
@@ -78,7 +97,8 @@ $result = $dba->mysql_con($db);
 		$from_name = "精米倶楽部インフォメーションセンター(送信専用)";
 		$from_addr = "no-reply-kome@jemtcnet.jp";
 		$smtp_user = "no-reply-kome@jemtcnet.jp";
-		$m_bcc = $m_bcc.",".$from_addr;
+		$admin_addr = "shimamura@jemtc.jp"
+		$m_bcc = $m_bcc.",".$from_addr.",".$admin_addr;
 		$array_bcc = explode(",", $m_bcc);
 		$smtp_password = "DhbKXqrF2Yzb";
 		

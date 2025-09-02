@@ -715,6 +715,9 @@
 					<td style="text-align:right;">
 						<a href="./rice_slip_upload.php" class="btn-border-b" target="_blank">伝票番号取込</a>
 					</td>
+					<td style="text-align:right;">
+						<a href="./rice_status_upload.php" class="btn-border-b" target="_blank">出荷日取込</a>
+					</td>
 				</tr>
 			</table>
 			<div id="formWrap">

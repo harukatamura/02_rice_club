@@ -69,6 +69,7 @@
 	$p_compcd = $_COOKIE['con_perf_compcd'];
 	//担当者
 	$p_staff = $_COOKIE['con_perf_staff'];
+	$way_list = array("web" => "web", "tel" => "電話", "introduction" => "紹介");
 ?>
 
 <!--------------------------------------------------------------------------------------------------
@@ -555,11 +556,12 @@
 					<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 						<tr style="background:#ccccff">
 							<th class="tbd_th_p1"><strong>No.</strong></th>
+							<th class="tbd_th_p2"><strong>申込方法</strong></th>
 							<th class="tbd_th_p2"><strong>申込日時</strong></th>
 							<th class="tbd_th_p2"><strong>お名前</strong></th>
 							<th class="tbd_th_p3"><strong>ご住所</strong></th>
-							<th class="tbd_th_p2"><strong>コース</strong></th>
-							<th class="tbd_th_p2"><strong>次回配送予定</strong></th>
+							<th class="tbd_th_p2"><strong>申込コース</strong></th>
+							<th class="tbd_th_p2"><strong>初回配送</strong></th>
 <!--							<th class="tbd_th_p2" COLSPAN="12"><strong>配送予定</strong></th>-->
 							</tr>
 						<?php
@@ -569,7 +571,7 @@
 						//----- データ抽出
 						$query = "
 							SELECT A.name, B.category, B.weight, C.delivery_date, B.date_s, C.stopflg, C.output_flg, A.idxnum
-							, A.area, A.address2, A.insdt
+							, A.area, A.address2, A.insdt, A.sales_way
 							FROM php_rice_personal_info A
 							LEFT OUTER JOIN php_rice_subscription B ON A.idxnum=B.personal_idxnum 
 							LEFT OUTER  JOIN php_rice_shipment C ON B.subsc_idxnum=C.subsc_idxnum 
@@ -599,6 +601,7 @@
 									<tr style="background-color:#ffffff;">
 								<? } ?>
 									<td class="tbd_td_p3_c"><? echo $row['idxnum']; ?></td>
+									<td class="tbd_td_p3_c"><? echo $way_list[$row['sales_way']]; ?></td>
 									<td class="tbd_td_p3_c"><? echo date('y/n/j H:i', strtotime($row['insdt'])); ?></td>
 									<td class="tbd_td_p3_c"><a href="Javascript:edit_name('<?= $row['idxnum']; ?>')"><? echo $row['name']; ?></a></td>
 									<? if($p_staff == "田村"|| $p_staff == "林" || $p_staff == "島村" || $p_compcd == "A"){ ?>

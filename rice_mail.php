@@ -810,7 +810,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					}if($search_q_date2 <> 0){
 						$query .= " AND DATE(E.insdt)<= '".date('Y-m-d', strtotime($search_q_date2))."'";
 					}
-					$query .= " AND A.delflg =0";
 					$query .= $status;
 					$query .= " UNION ALL SELECT E.mail_idxnum, A.updcount, A.name, E.insdt, A.upddt, A.ruby, A.company";
 					$query .= " , A.address1, A.phonenum1, A.email, E.mail_status, E.correstaf, E.urgency ";
@@ -848,7 +847,6 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 						$query .= " AND DATE(E.insdt)<= '".date('Y-m-d', strtotime($search_q_date2))."'";
 					}
 					$query .= $status;
-					$query .= " AND A.delflg =0";
 					$query .= " ORDER BY mail_status='3' DESC, upddt DESC, mail_idxnum DESC ";
 					$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 					$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);

@@ -559,7 +559,7 @@ $g_mail_idx=$_GET['mail_idx'];
 				while ($row = $rs->fetch_array()) {
 					//返信定型文
 					$phrase = $row['name'] . "　様\n\n";
-					$phrase .= "この度は精米倶楽部についてのお問い合わせいただき誠にありがとうございます。\n";
+					$phrase .= "この度は精米倶楽部のお申し込み誠にありがとうございます。\n";
 					$phrase .= "お問合せについて回答させていただきます、JEMTCの" . $s_staff . "と申します。\n";
 					$phrase .= "\n";
 					$phrase .= "＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝\n";
