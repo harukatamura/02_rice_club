@@ -64,6 +64,13 @@
 	else {
 		$p_display = 1;
 	}
+	//表示制御
+	if (isset($_POST['表示制御2'])) {
+		$p_display2 = $_POST['表示制御2'];
+	}
+	else {
+		$p_display2 = 1;
+	}
 
 	$g_factory = "本部";
 	//エクセル出力処理
@@ -75,6 +82,7 @@
 		$book = $reader->load("./rice_sagawa_template.xlsx");
 		$sheet = $book->getSheetByName("Sheet0");
 		$chksheet = $book->getSheetByName("リスト");
+		$headsheet = $book->getSheetByName("表紙");
 		//フラグを立てて出力するデータを取得
 		foreach($outputno as $value){
 			$query = "UPDATE php_rice_shipment ";
@@ -95,18 +103,29 @@
 		$j = 3; // 開始行
 		$t = 0;
 		$g_category = "";
+		$g_remarks2 = "";
 		$g_cash = 0;
+		$allnum = 0;
 		$category_list = [];
 		$weight_list = [];
 		$sumnum_list = [];
 		//出力対象のデータを取得
 		$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times";
 		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.p_way, B.remarks ";
+		$query .= " , CASE ";
+		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' ";
+		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' ";
+		$query .= "  ELSE '' END as remarks2 ";
 		$query .= " FROM php_rice_shipment A";
 		$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
 		$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
 		$query .= " WHERE A.output_flg = 3 AND A.stopflg = 0 AND A.delflg = 0";
-		$query .= " ORDER BY A.category, A.weight, C.postcd1, C.postcd2";
+		$query .= " ORDER BY  ";
+		$query .= " CASE ";
+		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 0 ";
+		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 1 ";
+		$query .= "  ELSE 2 END ";
+		$query .= " , A.category, A.weight, C.postcd1, C.postcd2";
 		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 		if (!($rs = $db->query($query))) {
@@ -159,47 +178,86 @@
 			$chksheet->setCellValueByColumnAndRow(0, $j, "□");
 			$chksheet->setCellValueByColumnAndRow(1, $j, $t);
 			$chksheet->setCellValueByColumnAndRow(2, $j, $row['name']);
-			$chksheet->setCellValueByColumnAndRow(3, $j, $row['category']);
-			$chksheet->setCellValueByColumnAndRow(4, $j, $row['weight']."kg");
-			$chksheet->setCellValueByColumnAndRow(5, $j, $row['tanka']);
-			$chksheet->setCellValueByColumnAndRow(6, $j, date('Y/n/j', strtotime($row['delivery_date'])));
-			$chksheet->setCellValueByColumnAndRow(7, $j, $row['remarks']);
+			$chksheet->setCellValueByColumnAndRow(3, $j, $row['remarks2']);
+			//文字を赤くする
+			$chksheet->getStyle('D'.$j)->getFont()->getColor()->setARGB(PHPExcel_Style_Color::COLOR_RED);
+			//文字を太くする
+			$chksheet->getStyle('D'.$j)->getFont()->setBold(true);
+			$chksheet->setCellValueByColumnAndRow(4, $j, $row['category']);
+			$chksheet->setCellValueByColumnAndRow(5, $j, $row['weight']."kg");
+			$chksheet->setCellValueByColumnAndRow(6, $j, $row['tanka']);
+			$chksheet->setCellValueByColumnAndRow(7, $j, date('Y/n/j', strtotime($row['delivery_date'])));
+			$chksheet->setCellValueByColumnAndRow(8, $j, $row['remarks']);
 			//カテゴリーが変われば改ページ挿入
-			if(($g_category <> $row['category'] || $row['weight'] <> $g_weight) && $j > 4){
+			if(($g_category <> $row['category'] || $row['weight'] <> $g_weight || $g_remarks2 <> $row['remarks2']) && $j > 4){
 				$chksheet->setBreak('A'.$j2, PHPExcel_Worksheet::BREAK_ROW);
 			}
-			if($g_category <> $row['category']){
-				$category_list[] = $row['category'];
-			}if($g_weight <> $row['weight']){
-				$weight_list[$row['category']][] = $row['weight'];
+			if($g_remarks2 <> $row['remarks2'] || $g_category <> $row['category']){
+				$category_list[$row['remarks2']][] = $row['category'];
+			}if($g_remarks2 <> $row['remarks2'] || $g_category <> $row['category'] || $g_weight <> $row['weight']){
+				$weight_list[$row['remarks2']][$row['category']][] = $row['weight'];
 			}
-			$sumnum_list[$row['category']][$row['weight']] = $sumnum_list[$row['category']][$row['weight']] + 1;
+			$sumnum_list[$row['remarks2']][$row['category']][$row['weight']] = $sumnum_list[$row['remarks2']][$row['category']][$row['weight']] + 1;
+			$sumnum_list[$row['remarks2']][0][0] = $sumnum_list[$row['remarks2']][0][0] + 1;
 			$g_category = $row['category'];
 			$g_weight = $row['weight'];
+			$g_remarks2 = $row['remarks2'];
+			$allnum += 1;
 		}
 		//罫線をつける
-		$chksheet->getStyle('A5:H'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
+		$chksheet->getStyle('A4:I'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
 		$chksheet->setBreakByColumnAndRow(0, 3, PHPExcel_Worksheet::BREAK_NONE);
 		//印刷範囲を指定
-		$chksheet->getPageSetup()->setPrintArea('A1:H'.$j);
+		$chksheet->getPageSetup()->setPrintArea('A1:I'.$j);
 		$chksheet->setCellValueByColumnAndRow(0, 1, "【精米倶楽部】".date('Y/n/j')."(".$p_staff."発行)");
 		$chksheet->getStyleByColumnAndRow(0, 1)->getFont()->setBold(true);
 		//リストを作成する
-		asort($weight_list);
 		$j=4;
-		foreach($category_list as  $val){
-			$chksheet->setCellValueByColumnAndRow(9, $j, $val);
-			foreach($weight_list[$val] as $val2){
-				$chksheet->setCellValueByColumnAndRow(10, $j, $val2."kg");
-				$chksheet->setCellValueByColumnAndRow(11, $j, $sumnum_list[$val][$val2]);
-				++$j;
+		$headsheet->setCellValueByColumnAndRow(0, 2, date('Y年n月')."　精米倶楽部　発送予定数");
+		foreach($category_list as $key => $val){
+			$startrow = $j;
+			$headsheet->setCellValueByColumnAndRow(0, $j, $key);
+			foreach($val as $val2){
+				$headsheet->setCellValueByColumnAndRow(1, $j, $val2);
+				foreach($weight_list[$key][$val2] as $val3){
+					$headsheet->setCellValueByColumnAndRow(2, $j, $val3."kg");
+					$headsheet->setCellValueByColumnAndRow(3, $j, $sumnum_list[$key][$val2][$val3]);
+					if($j % 2 == 0){
+						//セルに色をつける
+						$headsheet->getStyle('B'.$j.':D'.$j)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID)->getStartColor()->setARGB("f2f2f2");
+					}
+					++$j;
+				}
 			}
+			//合計
+			$headsheet->setCellValueByColumnAndRow(3, $j, $sumnum_list[$key][0][0]);
+			$headsheet->setCellValueByColumnAndRow(1, $j, "合計");
+			//文字を太くする
+			$headsheet->getStyle('B'.$j.':D'.$j)->getFont()->setBold(true);
+			//罫線をつける
+			$headsheet->getStyle('B'.$startrow.':D'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
+			//セルに色をつける
+			$headsheet->getStyle('B'.$j.':D'.$j)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID)->getStartColor()->setARGB("B7DEE8");
+			++$j;
+			++$j;
 		}
-		$j=$j-1;
-		//セルに色をつける
-		$chksheet->getStyle('J4:L'.$j)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID)->getStartColor()->setARGB("ffff00");
+		++$j;
+		//セル結合
+		$headsheet->mergeCells('C'.$j.':D'.$j);
+		//文字を右寄せ
+		$headsheet->getStyle('C'.$j)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+		//合計出力
+		$headsheet->setCellValueByColumnAndRow(1, $j, "総合計");
+		$headsheet->setCellValueByColumnAndRow(2, $j, $allnum);
+		//文字を太くする
+		$headsheet->getStyle('B'.$j.':D'.$j)->getFont()->setBold(true);
 		//罫線をつける
-		$chksheet->getStyle('J4:L'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
+		$headsheet->getStyle('B'.$j.':D'.$j)->getBorders()->getAllBorders()->setBorderStyle( PHPExcel_Style_Border::BORDER_THIN );
+		//セルに色をつける
+		$headsheet->getStyle('B'.$j.':D'.$j)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID)->getStartColor()->setARGB("31869B");
+		//文字を白くする
+		$headsheet->getStyle('B'.$j.':D'.$j)->getFont()->getColor()->setARGB(PHPExcel_Style_Color::COLOR_WHITE);
+		
 		//フラグを更新
 		$query = "UPDATE php_rice_shipment ";
 		$query .= " SET output_flg = 9";
@@ -347,7 +405,7 @@
 	line-height: 130%;
 	}
 	th.tbd_th_p2 {
-	width: 200px;
+	width: 150px;
 	padding: 10px 8px; /* 見出しセルのパディング（上下、左右） */
 	color: white;
 	background-color: #2B8225; /* 見出しセルの背景色 */
@@ -425,10 +483,15 @@
 	border: 1px solid white;
 	text-align: left;
 	}
-	td.tbd_td_p3 {
+	td.tbd_td_p3_r {
 	padding: 10px 5px 7px; /* データセルのパディング（上、左右、下） */
 	border: 1px solid white;
 	text-align: right;
+	}
+	td.tbd_td_p3_c {
+	padding: 10px 5px 7px; /* データセルのパディング（上、左右、下） */
+	border: 1px solid white;
+	text-align: center;
 	}
 	td.tbd_td_p3_err {
 	padding: 10px 5px 7px; /* データセルのパディング（上、左右、下） */
@@ -554,10 +617,45 @@
 				p1.style.display ="block";
 			}
 		}
+		//検索条件　表示/非表示
+		function clickBtn2(){
+			const p2 = document.getElementById("p2");
+
+			if (document.forms['frm'].elements['表示制御2'].value == 2) {
+				// noneで非表示
+				p2.style.display ="none";
+			}else{
+				// blockで表示
+				p2.style.display ="block";
+			}
+		}
 		//対象月変更
 		function Mclk_onChange(kbn){
 			document.forms['frm'].action = './<? echo $prgid;?>.php?kbn=' + kbn;
 			document.forms['frm'].submit();
+		}
+		//発送完了メール送信ボタン
+		function Push_Send(idxnum){
+			if(window.confirm("No." +idxnum + "の発送完了メールを送信します")){
+				//値をPHPに受け渡す
+				$.ajax({
+				type: "POST", //　GETでも可
+				url: "./rice_mail_slip_reply.php", //　送り先
+				data: { 
+				ship_idxnum: idxnum
+				 }, //　渡したいデータをオブジェクトで渡す
+				dataType : "json", //　データ形式を指定
+				scriptCharset: 'utf-8' //　文字コードを指定
+				})
+				.then(
+				function(mail_result){　 //　paramに処理後のデータが入って戻ってくる
+				alert("　結果：" + mail_result[1]);
+				console.log('resister', "伝票番号：" + mail_result[0] + "　結果：" + mail_result[1]);
+				},
+				function(XMLHttpRequest, textStatus, errorThrown){
+				console.log(errorThrown); //　エラー表示
+				});
+			}
 		}
 	</script>
 	<style type="text/css">
@@ -689,6 +787,20 @@
 	background-color: #008db7;
 	color: #fff;
 	}
+	.btn-flat-border {
+	display: inline-block;
+	padding: 0.3em 1em;
+	text-decoration: none;
+	background-color: #afeeee;
+	color: #191970;
+	border: solid 2px #191970;
+	border-radius: 3px;
+	transition: .4s;
+	}
+	.btn-flat-border:hover {
+	background: #191970;
+	color: white;
+	}
 	</style>
 </head>
 
@@ -777,22 +889,101 @@
 							</table>
 							<!--ここまで-->
 						</p>
-					<h2>受注詳細</h2>
-					<a href="javascript:MClickBtn('output_btn')" class="btn-circle-border-simple-sagawa">伝票出力</a>
-					<input type="submit" name="output_btn" value="伝票データ出力" style="display:none;">
-					<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
-							<tr><td class="category"><strong>■◇■販売データ■◇■</strong></td></tr>
-					</table>
-					<table class="tbd" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル" id= "TBL">
-						<tr>
-							<th class="tbd_th_c" ><label>全選択<br><input type="checkbox" class="list" id="checkAll" name="checkAll" onchange="Javascript:ChangeColor()"></label></th>
-							<th class="tbd_th_c" >受付NO.</th>
-							<th class="tbd_th_c" >名前</th>
-							<th class="tbd_th_c" >コース</th>
-							<th class="tbd_th_c" >量</th>
-							<th class="tbd_th_c" >金額</th>
-							<th class="tbd_th_c" title="全文">備考※</th>
-						</tr>
+						<!-- 個別表示 -->
+						<h2>集計データ</h2>
+						<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+							<tr>
+								<th class="tbd_th_p2" ></th>
+								<th class="tbd_th_p2" >合計</th>
+								<th class="tbd_th_p2" >伝票未発行</th>
+								<th class="tbd_th_p2" >伝票発行エラー</th>
+								<th class="tbd_th_p2" >発送準備中</th>
+								<th class="tbd_th_p2" >配送中</th>
+								<th class="tbd_th_p2" >伝票発行後ｷｬﾝｾﾙ</th>
+								<th class="tbd_th_p2" >受取完了</th>
+							</tr>
+							<?php
+							$comm->ouputlog("☆★☆処理開始☆★☆ ", $prgid, SYS_LOG_TYPE_INFO);
+							// ================================================
+							// ■　□　■　□　個別表示　■　□　■　□
+							// ================================================
+							//----- データ抽出
+							$query = "SELECT 
+								 CASE 
+								 WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' 
+								 WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' 
+								 ELSE '2回目以降' END as title
+								,COUNT(*) AS total_num  -- 全件数
+								,SUM(CASE WHEN A.output_flg = 0 THEN 1 ELSE 0 END) AS yet_num
+								,SUM(CASE WHEN A.output_flg = 3 THEN 1 ELSE 0 END) AS error_num
+								,SUM(CASE WHEN A.output_flg = 9 AND A.ship_date = '0000-00-00' THEN 1 ELSE 0 END) AS slip_num
+								,SUM(CASE WHEN A.output_flg = 9 AND A.ship_date <> '0000-00-00'AND A.receive_date = '0000-00-00' THEN 1 ELSE 0 END) AS delivery_num
+								,SUM(CASE WHEN A.delflg = 1 THEN 1 ELSE 0 END) AS cancel_num
+								,SUM(CASE WHEN A.output_flg = 9 AND A.receive_date <> '0000-00-00' THEN 1 ELSE 0 END) AS done_num
+								 FROM php_rice_shipment A 
+								 LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum  
+								 LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum  WHERE A.stopflg = 0 
+								 AND (A.delflg = 0 OR A.slipnumber<>'') 
+								 AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')
+								 GROUP BY 
+								 CASE 
+								 WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 0 
+								 WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 2 
+								 ELSE 1 END 
+								 ORDER BY  
+								 CASE 
+								 WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 0 
+								 WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 2 
+								 ELSE 1 END ";
+							$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+							$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+							if (! $rs = $db->query($query)) {
+								$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+							}
+							$i = 0;
+							$total_num = 0;
+							$yet_num = 0;
+							$error_num = 0;
+							$slip_num = 0;
+							$delivery_num = 0;
+							$done_num = 0;
+							while ($row = $rs->fetch_array()) {
+								++$i;
+								//明細設定
+								if (($i % 2) == 0) { ?>
+									<tr style="background-color:#EDEDED;">
+								<? } else { ?>
+									<tr>
+								<? } ?>
+									<th class="tbd_td_p1_c" ><? echo $row['title']; ?></th>
+									<td class="tbd_td_p1_r"><? echo $row['total_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['yet_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['error_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['slip_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['delivery_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['cancel_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['done_num']; ?></td>
+								</tr>
+								<?
+								$total_num += $row['total_num'];
+								$yet_num += $row['yet_num'];
+								$error_num += $row['error_num'];
+								$slip_num += $row['slip_num'];
+								$delivery_num += $row['delivery_num'];
+								$cancel_num += $row['cancel_num'];
+								$done_num += $row['done_num'];
+							} ?>
+							<tr style="background-color:d3d3d3;">
+								<th class="tbd_td_p1_c" >合計</th>
+								<td class="tbd_td_p1_r"><? echo $total_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $yet_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $error_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $slip_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $delivery_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $cancel_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $done_num; ?></td>
+							</tr>
+						</table><br><br>
 						<!-- 個別表示 -->
 						<?php
 						$comm->ouputlog("☆★☆処理開始☆★☆ ", $prgid, SYS_LOG_TYPE_INFO);
@@ -802,6 +993,10 @@
 						//----- データ抽出
 						$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times, A.output_flg";
 						$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, B.remarks, B.subsc_idxnum ";
+						$query .= " , CASE ";
+						$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' ";
+						$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' ";
+						$query .= "  ELSE '' END as remarks2 ";
 						$query .= " FROM php_rice_shipment A";
 						$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
 						$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
@@ -809,50 +1004,196 @@
 						$query .= " AND A.output_flg = 0";
 						$query .= " AND A.delflg = 0";
 						$query .= " AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')";
-						$query .= " ORDER BY A.output_flg, A.category, A.weight, C.idxnum";
+						$query .= " ORDER BY  ";
+						$query .= " CASE ";
+						$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 0 ";
+						$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 1 ";
+						$query .= "  ELSE 2 END ";
+						$query .= "  , A.category, A.weight, C.idxnum";
 						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 						$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 						if (! $rs = $db->query($query)) {
 							$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
 						}
 						$i=0;
-						while ($row = $rs->fetch_array()) {
-							++$i;
-							//明細設定
-							if (($rowcnt % 2) == 0) { ?>
-								<tr onclick="Javascript:CheckRow(<? echo $i ?>)">
-							<? } else { ?>
-								<tr style="background-color:#EDEDED;" onclick="Javascript:CheckRow(<? echo $i ?>)">
-							<? }
-							$rowcnt = $rowcnt +1; ?>
-								<td style="display:none;"><?php echo $row['subsc_idxnum']?></td>
-								<!-- 印刷用チェックボックス -->
-								<td class="tbd_td_p1_c" >
-									<? if($row['output_flg']>0){ ?>
-										<input id="box<? echo $i ?>" disabled="disabled" type="checkbox" value="<? echo $row['ship_idxnum'] ?>" name="outputno[]"  readonly="readonly" onchange="Javascript:ChangeColor()">
-									<? }else{ ?>
-										<input id="box<? echo $i ?>" type="checkbox" value="<? echo $row['ship_idxnum'] ?>" name="outputno[]"  readonly="readonly" onchange="Javascript:ChangeColor()">
-									<? } ?>
-								</td>
-								<!-- インデックス -->
-								<td width="70" class="tbd_td_p1_l"><?php echo str_pad($row['ship_idxnum'], 6, "0", STR_PAD_LEFT) ?></td>
-								</td>
-								<!-- お名前 -->
-								<td style="vertical-align:middle;">
-									<?php echo $row['name'] ?>
-								</td>
-								<!-- コース -->
-								<td class="tbd_td_p1_l"><?php echo $row['category']; ?></td>
-								<!-- 量 -->
-								<td class="tbd_td_p1_c"><?php echo $row['weight']; ?></td>
-								<!-- 金額 -->
-								<td class="tbd_td_p1_r"><?php echo number_format($row['tanka'])."円"; ?></td>
-								<!-- 備考 -->
-								<td class="tbd_td_p1_l" title="<? echo $row['remarks'] ?>"><?php echo mb_substr($row['remarks'],0,10); ?><? if(mb_strlen($row['remarks']) > 9){echo "・・・";} ?></td>
-							</tr>
+						if($rs && $rs->num_rows > 0){ ?>
+							<h2>伝票未出力データ</h2>
+							<a href="javascript:MClickBtn('output_btn')" class="btn-circle-border-simple-sagawa">伝票出力</a>
+							<input type="submit" name="output_btn" value="伝票データ出力" style="display:none;">
+							<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+									<tr><td class="category"><strong>■◇■販売データ■◇■</strong></td></tr>
+							</table>
+							<table class="tbd" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル" id= "TBL">
+								<tr>
+									<th class="tbd_th_c" ><label>全選択<br><input type="checkbox" class="list" id="checkAll" name="checkAll" onchange="Javascript:ChangeColor()"></label></th>
+									<th class="tbd_th_c" >発送NO.</th>
+									<th class="tbd_th_c" ></th>
+									<th class="tbd_th_c" >名前</th>
+									<th class="tbd_th_c" >コース</th>
+									<th class="tbd_th_c" >量</th>
+									<th class="tbd_th_c" >金額</th>
+									<th class="tbd_th_c" title="全文">備考※</th>
+								</tr>
+							<?
+							while ($row = $rs->fetch_array()) {
+								++$i;
+								//明細設定
+								if (($rowcnt % 2) == 0) { ?>
+									<tr onclick="Javascript:CheckRow(<? echo $i ?>)">
+								<? } else { ?>
+									<tr style="background-color:#EDEDED;" onclick="Javascript:CheckRow(<? echo $i ?>)">
+								<? }
+								$rowcnt = $rowcnt +1; ?>
+									<td style="display:none;"><?php echo $row['subsc_idxnum']?></td>
+									<!-- 印刷用チェックボックス -->
+									<td class="tbd_td_p1_c" >
+										<? if($row['output_flg']>0){ ?>
+											<input id="box<? echo $i ?>" disabled="disabled" type="checkbox" value="<? echo $row['ship_idxnum'] ?>" name="outputno[]"  readonly="readonly" onchange="Javascript:ChangeColor()">
+										<? }else{ ?>
+											<input id="box<? echo $i ?>" type="checkbox" value="<? echo $row['ship_idxnum'] ?>" name="outputno[]"  readonly="readonly" onchange="Javascript:ChangeColor()">
+										<? } ?>
+									</td>
+									<!-- インデックス -->
+									<td width="70" class="tbd_td_p1_c"><?php echo str_pad($row['ship_idxnum'], 6, "0", STR_PAD_LEFT) ?></td>
+									<!-- 初回/最終回チェック -->
+									<td class="tbd_td_p1_c"><?php echo $row['remarks2']; ?></td>
+									<!-- お名前 -->
+									<td class="tbd_td_p1_l" style="vertical-align:middle;">
+										<?php echo $row['name'] ?>
+									</td>
+									<!-- コース -->
+									<td class="tbd_td_p1_c"><?php echo $row['category']; ?></td>
+									<!-- 量 -->
+									<td class="tbd_td_p1_c"><?php echo $row['weight']; ?></td>
+									<!-- 金額 -->
+									<td class="tbd_td_p1_r"><?php echo number_format($row['tanka'])."円"; ?></td>
+									<!-- 備考 -->
+									<td class="tbd_td_p1_l" title="<? echo $row['remarks'] ?>"><?php echo mb_substr($row['remarks'],0,10); ?><? if(mb_strlen($row['remarks']) > 9){echo "・・・";} ?></td>
+								</tr>
+							<? } ?>
+							</table>
+							<input type="text" name="行数" id="行数" value="<? echo $i ?>" style="display:none">
 						<? } ?>
-						</table>
-						<input type="text" name="行数" id="行数" value="<? echo $i ?>" style="display:none">
+						<!-- 伝票出力済データ -->
+						<?php
+						$comm->ouputlog("☆★☆処理開始☆★☆ ", $prgid, SYS_LOG_TYPE_INFO);
+						// ================================================
+						// ■　□　■　□　個別表示　■　□　■　□
+						// ================================================
+						//----- データ抽出
+						$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times, A.output_flg, A.slipnumber, A.mail_date, A.mail_flg, C.email";
+						$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, B.remarks, B.subsc_idxnum, A.ship_date, A.receive_date ";
+						$query .= " , CASE ";
+						$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' ";
+						$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' ";
+						$query .= "  ELSE '' END as remarks2 ";
+						$query .= " ,CASE ";
+						$query .= " WHEN A.output_flg = 3 THEN 'エラー' ";
+						$query .= " WHEN A.delflg = 1 AND A.ship_date <> '0000-00-00' THEN '発送後キャンセル' ";
+						$query .= " WHEN A.delflg = 1 AND A.ship_date = '0000-00-00' THEN '発送前キャンセル' ";
+						$query .= " WHEN A.output_flg = 9 AND A.ship_date = '0000-00-00' THEN '発送準備中' ";
+						$query .= " WHEN A.output_flg = 9 AND A.ship_date <> '0000-00-00'AND A.receive_date = '0000-00-00' THEN '配送中' ";
+						$query .= " WHEN A.output_flg = 9 AND A.receive_date <> '0000-00-00' THEN '受取完了' ";
+						$query .= "  ELSE '?' END as status ";
+						$query .= " FROM php_rice_shipment A";
+						$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
+						$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
+						$query .= " WHERE A.stopflg = 0";
+						$query .= " AND A.output_flg > 0";
+						$query .= " AND (A.delflg = 0 OR A.slipnumber <> '')";
+						$query .= " AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')";
+						$query .= " ORDER BY  ";
+						$query .= " CASE ";
+						$query .= " WHEN A.delflg = 1 AND A.ship_date <> '0000-00-00' THEN 7 ";
+						$query .= " WHEN A.delflg = 1 AND A.ship_date = '0000-00-00' THEN 8 ";
+						$query .= " WHEN A.output_flg = 3 THEN 1 ";
+						$query .= " WHEN A.output_flg = 9 AND A.ship_date = '0000-00-00' THEN 2 ";
+						$query .= " WHEN A.output_flg = 9 AND A.ship_date <> '0000-00-00'AND A.receive_date = '0000-00-00' THEN 3 ";
+						$query .= " WHEN A.output_flg = 9 AND A.receive_date <> '0000-00-00' THEN 4 ";
+						$query .= " WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 5 ";
+						$query .= " WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 6 ";
+						$query .= " ELSE 2 END ";
+						$query .= " , A.category, A.weight, C.idxnum";
+						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+						$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+						if (! $rs = $db->query($query)) {
+							$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+						}
+						$rowcnt = 0;
+						if($rs && $rs->num_rows > 0){ ?>
+							<h2>伝票出力済データ</h2>
+							<fieldset>
+								<input type="radio" name="表示制御2" id="d-item-3" class="radio-inline__input" style="font-size: 30px;" value="1" onChange="javascript:clickBtn2();" <? if($p_display2==1){echo "checked=\"checked\"";}?>/>
+								<label class="radio-inline__label" for="d-item-3"><b>表示</b></label>
+								<input type="radio" name="表示制御2" id="d-item-4" class="radio-inline__input" style="font-size: 30px;" value="2" onChange="javascript:clickBtn2();" <? if($p_display2==2){echo "checked=\"checked\"";}?>/>
+								<label class="radio-inline__label" for="d-item-4"><b>非表示</b></label>
+							</fieldset>
+							<p id="p2">
+								<table class="tbd" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+									<tr>
+										<th class="tbd_th_c" >状況</th>
+										<th class="tbd_th_c" >出荷日</th>
+										<th class="tbd_th_c" >発送NO.</th>
+										<th class="tbd_th_c" ></th>
+										<th class="tbd_th_c" >名前</th>
+										<th class="tbd_th_c" >コース</th>
+										<th class="tbd_th_c" >量</th>
+										<th class="tbd_th_c" >金額</th>
+										<th class="tbd_th_c" title="全文">備考※</th>
+										<th class="tbd_th_c" >出荷連絡</th>
+									</tr>
+								<?
+								while ($row = $rs->fetch_array()) {
+									//明細設定
+									if($row['status'] == "エラー") { ?>
+										<tr style="background-color:#ff6347;">
+									<? }else if($row['status'] == "発送準備中" || $row['status'] == "配送中") { ?>
+										<tr style="background-color:yellow;">
+									<? }else if (($rowcnt % 2) == 0) { ?>
+										<tr>
+									<? } else { ?>
+										<tr style="background-color:#EDEDED;">
+									<? }
+									$rowcnt = $rowcnt +1; ?>
+										<!-- ステータス -->
+										<td class="tbd_td_p1_c">
+											<?php echo $row['status']; ?>
+											<? if($row['status'] == "配送中"){ ?>
+												<br>(<a href="https://k2k.sagawa-exp.co.jp/p/web/okurijosearch.do?okurijoNo=<?= $row['slipnumber'] ?>" target="_blank"><?= $row['slipnumber'] ?></a>)
+											<? }else if($row['status'] == "受取完了"){
+												echo "<br>(".date('Y/n/j', strtotime($row['receive_date'])).")";
+											} ?>
+										</td>
+										<!-- 出荷日 -->
+										<td class="tbd_td_p1_c"><?php if($row['ship_date'] == "0000-00-00 00:00:00"){echo "-";}else{echo date('Y/n/j', strtotime($row['ship_date']));} ?></td>
+										<!-- インデックス -->
+										<td width="70" class="tbd_td_p1_c"><?php echo str_pad($row['ship_idxnum'], 6, "0", STR_PAD_LEFT) ?></td>
+										<!-- 初回/最終回チェック -->
+										<td class="tbd_td_p1_c"><?php echo $row['remarks2']; ?></td>
+										<!-- お名前 -->
+										<td class="tbd_td_p1_l" style="vertical-align:middle;"><?php echo $row['name'] ?></td>
+										<!-- コース -->
+										<td class="tbd_td_p1_c"><?php echo $row['category']; ?></td>
+										<!-- 量 -->
+										<td class="tbd_td_p1_c"><?php echo $row['weight']; ?></td>
+										<!-- 金額 -->
+										<td class="tbd_td_p1_r"><?php echo number_format($row['tanka'])."円"; ?></td>
+										<!-- 備考 -->
+										<td class="tbd_td_p1_l" title="<? echo $row['remarks'] ?>"><?php echo mb_substr($row['remarks'],0,6); ?><? if(mb_strlen($row['remarks']) > 5){echo "...";} ?></td>
+										<!-- 出荷メール -->
+										<td class="tbd_td_p1_c">
+											<? if($row['mail_flg'] == 1){
+												echo "送信済<br>(".date('y/n/j H:i:s', strtotime($row['mail_date'])).")";
+											}else if(($row['status'] == "配送中" || $row['status'] == "発送準備中") && $row['slipnumber'] <> "" && $row['email'] <> ""){ ?>
+												<a href="Javascript:Push_Send(<? echo $row['ship_idxnum'] ?>)" class="btn-flat-border">ﾒｰﾙ送信</a>
+											<? } ?>
+										</td>
+									</tr>
+								<? } ?>
+								</table>
+							</p>
+							<!-- ここまで -->
+						<? } ?>
 					<table class="tbf3" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 						<td class="tbf3_td_p2_c"><a href="#" onClick="window.close(); return false;"><input type="button" value="閉じる"></a></td>
 					</table>

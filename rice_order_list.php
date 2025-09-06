@@ -69,7 +69,16 @@
 	$p_compcd = $_COOKIE['con_perf_compcd'];
 	//担当者
 	$p_staff = $_COOKIE['con_perf_staff'];
-	$way_list = array("web" => "web", "tel" => "電話", "introduction" => "紹介");
+	$way_list = array("web" => "web", "tel" => "電話", "introduction" => "<font color='red'><strong>紹介</strong></font>");
+
+	
+	//検索
+	$s_way_list = array("web" => "web", "tel" => "電話", "introduction" => "紹介");
+	if(isset($_POST['search'])){
+		$p_way_list = $_POST['申込方法'];
+	}else{
+		$p_way_list = array("web","tel","introduction");
+	}
 ?>
 
 <!--------------------------------------------------------------------------------------------------
@@ -82,7 +91,6 @@
 	<meta http-equiv="Refresh" content="30;URL='./<? echo $prgid ?>.php?display=<? echo $p_display ?>'">
 <? } ?>
 <head>
-	<title>J-Office | <?= prgname ?></title>
 	<style type="text/css">
 	body {
 		color: #333333;
@@ -530,6 +538,7 @@
 			window.open('./rice_kokyaku.php?idx=' + idxnum);
 		}
 	</script>
+	<title>J-Office | <?= prgname ?></title>
 </head>
 
 <body>
@@ -546,6 +555,36 @@
 			<div id="formWrap">
 				<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
 					<p style="text-align:right"><a href="./rice_order.php" class="btn-border-b">実績一覧に戻る</a></p>
+					<h2>検索条件</h2><br>
+					<table class="tbd" align="center" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+						<tr>
+							<th class="tbd_th"><strong>申込方法</strong></th>
+							<td class="tbd_req"></td>
+							<td class="tbd_td">
+								<? foreach($s_way_list as $key => $val){ ?>
+									<label><input type="checkbox" name="申込方法[]" value="<? echo $key ?>" <? if(in_array($key, $p_way_list)){ ?>checked='checked'<? } ?>><? echo $val ?></label>
+								<? } ?>
+							</td>
+						</tr>
+						<tr>
+							<th class="tbd_th"><strong>お名前</strong></th>
+							<td class="tbd_req"></td>
+							<td class="tbd_td">
+								<input name="名前" style="height:25px; width:240px;" value=<?php echo $_POST['名前'] ?>>
+							</td>
+						</tr>
+						<th class="tbd_th"><strong>キャンセル済み</strong></th>
+							<td class="tbd_req"></td>
+							<td class="tbd_td">
+								<label><input type="checkbox" name="キャンセル済み" value="表示">表示する</label>
+							</td>
+						</tr>
+					</table>
+					<table class="tbf3" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+						<tr>
+							<td class="tbf3_td_p1_c"><input type="submit" name="search" style="width:100px; height:30px; font-size:12px;" value="検索"></td>
+						</tr>
+					</table>
 					<h2>顧客情報一覧</h2><br>
 					<p>
 					※お名前クリックで顧客情報修正画面が開きます<br><br>
@@ -570,13 +609,50 @@
 						// ================================================
 						//----- データ抽出
 						$query = "
-							SELECT A.name, B.category, B.weight, C.delivery_date, B.date_s, C.stopflg, C.output_flg, A.idxnum
-							, A.area, A.address2, A.insdt, A.sales_way
+							SELECT A.name, C.category as p_category, C.weight as p_weight, F.category, F.weight, C.delivery_date, B.date_s, C.stopflg, C.output_flg, A.idxnum
+							, A.area, A.address2, A.insdt, A.sales_way, C.ship_idxnum
+							, C.delivery_date, 
+							CASE 
+								WHEN F.category <> C.category OR F.weight <> C.weight THEN 1
+								ELSE 0 
+							END as changeflg
+							, CASE 
+								WHEN I.idxnum IS NOT NULL THEN CONCAT('<br>(', I.idxnum, ' ', A.introduction, ')') 
+								WHEN I.idxnum IS NULL AND A.introduction <> '' THEN CONCAT('<br>(', A.introduction, ')' )
+								ELSE ''
+							END as intro
 							FROM php_rice_personal_info A
-							LEFT OUTER JOIN php_rice_subscription B ON A.idxnum=B.personal_idxnum 
-							LEFT OUTER  JOIN php_rice_shipment C ON B.subsc_idxnum=C.subsc_idxnum 
-							WHERE A.status='申込' 
-							AND A.delflg='0' 
+							LEFT OUTER  JOIN php_rice_subscription B ON A.idxnum=B.personal_idxnum
+							LEFT OUTER JOIN  (
+								SELECT subsc_idxnum, MIN(ship_idxnum) AS min_shipidx
+								FROM php_rice_shipment
+								GROUP BY subsc_idxnum
+							) D ON B.subsc_idxnum = D.subsc_idxnum
+							LEFT OUTER  JOIN php_rice_shipment C ON D.min_shipidx=C.ship_idxnum
+							LEFT OUTER JOIN  (
+								SELECT subsc_idxnum, MIN(ship_idxnum) AS min_shipidx
+								FROM php_rice_shipment
+								WHERE output_flg=0
+								GROUP BY subsc_idxnum
+							) E ON B.subsc_idxnum = E.subsc_idxnum
+							LEFT OUTER  JOIN php_rice_shipment F ON E.min_shipidx=F.ship_idxnum
+							LEFT OUTER  JOIN php_rice_personal_info I ON A.introduction=I.name
+							WHERE A.status='申込' ";
+						
+						if(isset($_POST['名前']){
+							$kensaku_val = str_replace(array(" ", "　"), "%", $_POST['名前']);
+							$query .= " AND name LIKE '%".$kensaku_val."%'"
+						}
+						if(isset($_POST['キャンセル済み']){
+							$query .= " AND A.delflg IN (0,1) "
+						}else{
+							$query .= " AND A.delflg = 0 "
+						}
+						if (count($p_way_list)>0){
+							$str = implode(",", $p_way_list);
+							$query .= " AND A.sales_way IN (".$str.")";
+						]
+						$query .= "
 							ORDER BY A.idxnum DESC, C.delivery_date
 						";
 						$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
@@ -601,7 +677,7 @@
 									<tr style="background-color:#ffffff;">
 								<? } ?>
 									<td class="tbd_td_p3_c"><? echo $row['idxnum']; ?></td>
-									<td class="tbd_td_p3_c"><? echo $way_list[$row['sales_way']]; ?></td>
+									<td class="tbd_td_p3_c"><? echo $way_list[$row['sales_way']].$row['intro']; ?></td>
 									<td class="tbd_td_p3_c"><? echo date('y/n/j H:i', strtotime($row['insdt'])); ?></td>
 									<td class="tbd_td_p3_c"><a href="Javascript:edit_name('<?= $row['idxnum']; ?>')"><? echo $row['name']; ?></a></td>
 									<? if($p_staff == "田村"|| $p_staff == "林" || $p_staff == "島村" || $p_compcd == "A"){ ?>
@@ -609,7 +685,14 @@
 									<? }else{ ?>
 										<td class="tbd_td_p3_l"><? echo $row['area']; ?></td>
 									<? } ?>
-									<td class="tbd_td_p3_r"><? echo $row['category']."<br>".$row['weight']."kg"; ?></td>
+									<td class="tbd_td_p3_r">
+										<? if($row['changeflg'] == 1 ){ ?>
+											<font color='red'><strong>※変更済<br><? echo $row['category']."<br>".$row['weight']."kg"; ?></strong></font><br>
+											(変更前：<br><? echo $row['p_category']."<br>".$row['p_weight']."kg"; ?>)
+										<? }else{ ?>
+											<? echo $row['category']."<br>".$row['weight']."kg"; ?>
+										<? } ?>
+									</td>
 								<? 
 								++$cnt;
 							} ?>

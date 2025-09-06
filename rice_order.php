@@ -452,7 +452,7 @@
     -webkit-animation: priceAnimation 0.5s 1 ease-in-out;
     -moz-animation: priceAnimation 0.5s 1 ease-in-out;
     -o-animation: priceAnimation 0.5s 1 ease-in-out;
-    border-radius: 3px;
+    border-radius: 1px;
     /*                        -webkit-transition: all 0.5s 1 ease-in-out;
     -moz-transition: all 0.5s 1 ease-in-out;
     -o-transition: all 0.5s 1 ease-in-out; */
@@ -587,8 +587,8 @@
 				<div id="formWrap">
 					<form name="frm" method = "post" action="./<? echo $prgid ?>.php?display=<?echo $p_display ?>&ref=<?echo $refresh ?>" >
 						<p style="text-align:right">
-							<?php if($p_staff == "田村"){ ?><a href="./rice_slip.php" class="btn-border-b" target="_blank">伝票発行</a>　<br><? } ?>
-							<a href="./rice_mail_list.php" class="btn-border-b" target="_blank">配信</a>　<a href="./rice_mail.php" class="btn-border-b" target="_blank">メール問合一覧</a>　<a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a>
+							<?php if($p_compcd == "J"){ ?><a href="./rice_slip.php" class="btn-border-b" target="_blank">伝票発行</a>　<? } ?>
+							<a href="./rice_mail_list.php" class="btn-border-b" target="_blank">配信</a>　<a href="./rice_mail.php" class="btn-border-b" target="_blank">問合一覧</a>　<a href="./rice_order_list.php" class="btn-border-b">顧客情報一覧</a>　<a href="https://ws.formzu.net/fgen/S88742786/" target="_blank" class="btn-border-b">☎　新規注文受付</a>
 						</p>
 						<h2>検索条件</h2><br>
 						<?php list($week, $p_date1, $p_date2, $p_staff) = $comm->getcalender($db,1,6); ?>
@@ -596,96 +596,167 @@
 						<div class="fare">
 							<left>
 								<div class="fare-calendar">
-								<!--　販売実績グラフ -->
-								【累計販売実績】
-								<div class="fare-rates">
-									<div class="fare-monthcontainer">
-										<ul>
-											<?
-											$query = "SELECT category, SUM(weight) as weight, COUNT(*) as cnt ";
-											$query .= " FROM php_rice_subscription ";
-											$query .= " WHERE status='申込' ";
-											$query .=" AND DATE(insdt) >=" . sprintf("'%s'", $p_date1) ;
-											$query .=" AND DATE(insdt) <=" . sprintf("'%s'", $p_date2);
-											$query .= " AND delflg='0' ";
-											$query .= " GROUP BY category ";
-											$query .= " ORDER BY category";
-											$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
-											$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
-											if (!($rs = $db->query($query))) {
-												$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
-											}
-											$arr_performance =  [];
-											$all_weight = 0;
-											$all_cnt = 0;
-											while ($row = $rs->fetch_array()) {
-												$arr_performance[] = $row;
-												$all_cnt += $row['cnt'];
-												$all_weight += $row['weight'];
-											}
-											if($all_cnt > 400){
-												$px = 0.5;
-											}else if($all_cnt > 300){
-												$px = 0.67;
-											}else if($all_cnt > 250){
-												$px = 0.80;
-											}else if($all_cnt > 200){
-												$px = 1.0;
-											}else if($all_cnt > 150){
-												$px = 1.25;
-											}else if($all_cnt > 100){
-												$px = 2;
-											}else if($all_cnt > 70){
-												$px = 3;
-											}else if($all_cnt > 50){
-												$px = 4;
-											}else{
-												$px = 7.5;
-											}
-											for($i=0; $i<count($arr_performance); $i++) {
-											?>
+									<!--　販売実績グラフ -->
+									【累計販売実績】
+									<div class="fare-rates">
+										<div class="fare-monthcontainer">
+											<ul>
+												<?
+												$query = "SELECT ";
+												$query .= " B.sales_way, A.category, SUM(A.weight) as weight, COUNT(*) as cnt ";
+												$query .= " ,SUM(CASE WHEN B.sales_way = 'tel' THEN 1 ELSE 0 END) AS telcnt ";
+												$query .= " ,SUM(CASE WHEN B.sales_way = 'web' THEN 1 ELSE 0 END) AS webcnt ";
+												$query .= " ,SUM(CASE WHEN B.sales_way = 'introduction' THEN 1 ELSE 0 END) AS introcnt ";
+												$query .= " FROM php_rice_subscription A ";
+												$query .= " LEFT OUTER JOIN php_rice_personal_info B ON A.personal_idxnum=B.idxnum ";
+												$query .= " WHERE A.status='申込' ";
+												$query .=" AND DATE(A.insdt) >=" . sprintf("'%s'", $p_date1) ;
+												$query .=" AND DATE(A.insdt) <=" . sprintf("'%s'", $p_date2);
+												$query .= " AND A.delflg='0' ";
+												$query .= " GROUP BY A.category ";
+												$query .= " ORDER BY A.category ";
+												$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+												$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+												if (!($rs = $db->query($query))) {
+													$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+												}
+												$arr_performance =  [];
+												$all_weight = 0;
+												$all_cnt = 0;
+												while ($row = $rs->fetch_array()) {
+													$arr_performance[] = $row;
+													$all_tel += $row['telcnt'];
+													$all_web += $row['webcnt'];
+													$all_int += $row['introcnt'];
+													$all_cnt += $row['cnt'];
+													$all_weight += $row['weight'];
+												}
+												if($all_cnt > 400){
+													$px = 0.5;
+												}else if($all_cnt > 300){
+													$px = 0.67;
+												}else if($all_cnt > 250){
+													$px = 0.80;
+												}else if($all_cnt > 200){
+													$px = 1.0;
+												}else if($all_cnt > 150){
+													$px = 1.25;
+												}else if($all_cnt > 100){
+													$px = 2;
+												}else if($all_cnt > 70){
+													$px = 3;
+												}else if($all_cnt > 50){
+													$px = 4;
+												}else{
+													$px = 7.5;
+												}
+												for($i=0; $i<count($arr_performance); $i++) {
+												?>
+													<li class="fare-month">
+														<span class="ttl2">
+															<? if ($arr_performance[$i]['category'] <> "") { ?>
+															<b><? echo $arr_performance[$i]['cnt'] ?></b><font size="3">件</font><br>
+															<b><? echo $arr_performance[$i]['weight'] ?></b><font size="3">kg</font>
+															<? $all_buynum +=$arr_performance[$i]['cnt']; ?>
+															<? } ?>
+														</span>
+														<span class="fare-price" style="height:<? echo $arr_performance[$i]['introcnt']  * $px ?>px; background-color:#FFD700;" ></span>
+														<span class="fare-price" style="height:<? echo $arr_performance[$i]['telcnt']  * $px ?>px; background-color:#FF6F61;" ></span>
+														<span class="fare-price" style="height:<? echo $arr_performance[$i]['webcnt']  * $px ?>px; background-color:#4DD0E1;" ></span>
+														<span class="ttl1" style="line-height: 1.0;">
+															<font size="3">
+																<b><? echo $arr_performance[$i]['category'] ?></b>
+															</font>
+														</span>
+													</li>
+												<? } ?>
 												<li class="fare-month">
 													<span class="ttl2">
-														<? if ($arr_performance[$i]['category'] <> "") { ?>
-														<b><? echo $arr_performance[$i]['cnt'] ?></b><font size="3">件</font><br>
-														<b><? echo $arr_performance[$i]['weight'] ?></b><font size="3">kg</font>
-														<? $all_buynum +=$arr_performance[$i]['cnt']; ?>
+														<? if ($all_cnt > 0) { ?>
+															<b><? echo $all_cnt ?></b><font size="3">件</font><br>
+															<b><? echo $all_weight ?></b><font size="3">kg</font>
 														<? } ?>
 													</span>
-													<span class="fare-price" style="height:<? echo $arr_performance[$i]['cnt']  * $px ?>px;" ></span>
+													<span class="fare-price" style="height:<? echo $all_int  * $px ?>px; background-color:#FFD700;" ></span>
+													<span class="fare-price" style="height:<? echo $all_tel  * $px ?>px; background-color:#FF6F61;" ></span>
+													<span class="fare-price" style="height:<? echo $all_web  * $px ?>px; background-color:#4DD0E1;" ></span>
 													<span class="ttl1" style="line-height: 1.0;">
-														<font size="3">
-															<b><? echo $arr_performance[$i]['category'] ?></b>
+														<font size="4">
+															<b>合計</b>
 														</font>
 													</span>
 												</li>
-											<?
-											}
-											?>
-											<li class="fare-month">
-												<span class="ttl2">
-													<? if ($all_cnt > 0) { ?>
-														<b><? echo $all_cnt ?></b><font size="3">件</font><br>
-														<b><? echo $all_weight ?></b><font size="3">kg</font>
-													<? } ?>
-												</span>
-												<span class="fare-price" style="height:<? echo $all_cnt  * $px ?>px;" ></span>
-												<span class="ttl1" style="line-height: 1.0;">
-													<font size="4">
-														<b>合計</b>
-													</font>
-												</span>
-											</li>
-										</ul>
+											</ul>
+										</div>
 									</div>
-								</div>
-								<div>
-								<!--　詳細内訳 -->
-								</div>
+									<p style="text-align:right;"><span style="background-color:#FFD700;">　　</span>：紹介　<span style="background-color:#FF6F61;">　　</span>：電話　<span style="background-color:#4DD0E1;">　　</span>：WEB　</p>
 								</div>
 							</left>
 						</div><br><br>
 						<h2>実績詳細　（<?= date('Y/n/j', strtotime($p_date1))."～".date('Y/n/j', strtotime($p_date2)) ?>）</h2><br>
+						<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+							<tr><td class="category"><strong>申込方法別実績</strong></td></tr>
+						</table><br>
+						<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+							<tr style="background:#ccccff">
+								<th class="tbd_th_p3"><strong>申込方法</strong></th>
+								<th class="tbd_th_p1"><strong>件数(件)</strong></th>
+								<th class="tbd_th_p1"><strong>量(kg)</strong></th>
+								<th class="tbd_th_p2"><strong>小計(円)</strong></th>
+								</tr>
+							<?php
+							// ================================================
+							// ■　□　■　□　全体表示　■　□　■　□
+							// ================================================
+							//----- データ抽出
+							$query = "
+								SELECT 
+									B.sales_way, 
+									SUM(CASE WHEN A.delflg='0' THEN 1 ELSE 0 END) AS cnt,
+									SUM(CASE WHEN A.delflg='0' THEN A.weight ELSE 0 END) AS weight,
+									SUM(CASE WHEN A.delflg='0' THEN A.tanka ELSE 0 END) AS sumkin
+								FROM php_rice_subscription A 
+								LEFT OUTER  JOIN php_rice_personal_info B ON A.personal_idxnum=B.idxnum
+								WHERE 1 
+								 AND DATE(A.insdt) >=" . sprintf("'%s'", $p_date1) . "
+								 AND DATE(A.insdt) <=" . sprintf("'%s'", $p_date2) . " 
+								GROUP BY B.sales_way
+								ORDER BY B.sales_way
+							";
+							$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+							$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+							if (!($rs = $db->query($query))) {
+								$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+							}
+							//初期化
+							$cnt = 0;
+							$sum_weight = 0;
+							$sum_cnt = 0;
+							$sum_cash = 0;
+							$way_list = array("tel" => "電話", "web" => "WEB", "introduction" => "紹介");
+							while ($row = $rs->fetch_array()) {
+								if(($cnt % 2) == 0){ ?>
+									<tr style="background-color:#f5f5f5;">
+								<? }else{ ?>
+									<tr style="background-color:#ffffff;">
+								<? } ?>
+									<td class="tbd_td_p4_l"><? echo $way_list[$row['sales_way']] ?></td>
+									<td class="tbd_td_p3_r"><? echo $row['cnt']; ?></td>
+									<td class="tbd_td_p3_r"><? echo $row['weight']; ?></td>
+									<td class="tbd_td_p4_r"><? echo number_format($row['sumkin']); ?></td>
+								</tr>
+								<? 
+								$sum_weight += $row['weight'];
+								$sum_cnt += $row['cnt'];
+								$sum_cash += $row['sumkin'];
+							} ?>
+							<tr style="background-color:#d3d3d3;">
+								<td class="tbd_td_p4_l">合計</td>
+								<td class="tbd_td_p4_r"><?php echo number_format($sum_cnt) ?>件</td>
+								<td class="tbd_td_p4_r"><?php echo number_format($sum_weight) ?>kg</td>
+								<td class="tbd_td_p4_r"><?php echo number_format($sum_cash) ?>円</td>
+							</tr>
+						</table><br><br>
 						<table class="tbh" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 							<tr><td class="category"><strong>コース別実績</strong></td></tr>
 						</table><br>
@@ -736,8 +807,8 @@
 									$g_category = $row['category']; ?>
 									<td class="tbd_td_p3_r"><? echo $row['weight']; ?></td>
 									<td class="tbd_td_p3_r"><? echo $row['cnt']; ?></td>
-									<td class="tbd_td_p4_r"><? echo number_format($row['tanka']); ?></td>
-									<td class="tbd_td_p4_r"><? echo number_format($row['cnt'] * $row['tanka']); ?></td>
+									<td class="tbd_td_p3_r"><? echo $row['weight']; ?></td>
+									<td class="tbd_td_p3_r"><? echo number_format($row['sumkin']); ?></td>
 								</tr>
 								<? 
 								++$cnt;

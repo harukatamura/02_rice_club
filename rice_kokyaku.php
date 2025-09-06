@@ -780,8 +780,8 @@
 			var set_tanka = document.forms['frm'].elements["金額"+i].value;
 			var max_row = document.forms['frm'].elements["最大行"].value;
 			Swal.fire({
-				title: g_columm + 'のデータを一括で変更します',
-				text: '次回以降すべての配送データを変更します。※データが反映されていることを確認後、更新ボタンを押してください。',
+				title: '変更の反映を確認後、更新ボタンを押してください',
+				text: '次回以降すべての' + g_columm + 'を一括で変更します。',
 				type: 'warning',
 				showCancelButton: true,
 				confirmButtonText: '反映',
@@ -1046,7 +1046,7 @@
 																<option value="<?= $key; ?>" <? if($key == $row2['weight']){echo "selected='selected'";} ?> ><?= $val; ?></option>
 															<? } ?>
 														</select><br>
-														<? if($next == 1 && $p_staff == "田村"){ ?>
+														<? if($next == 1){ ?>
 															<input type="button" class="button-blue" value="一括反映" onclick="Copy_data('コース', <?= $i; ?>)">
 														<? } ?>
 													</td>
@@ -1057,7 +1057,7 @@
 																<option value="<?= $val; ?>" <? if($val == $row2['specified_times']){echo "selected='selected'";} ?> ><?= $key; ?></option>
 															<? } ?>
 														</select><br>
-														<? if($next == 1 && $p_staff == "田村"){ ?>
+														<? if($next == 1){ ?>
 															<input type="button" class="button-blue" value="一括反映" onclick="Copy_data('到着指定時間帯', <?= $i; ?>)">
 														<? } ?>
 													</td>
