@@ -397,18 +397,18 @@
 	text-align: center;
 	}
 	th.tbd_th_p1 {
+	width: 80px;
 	padding: 10px 8px; /* 見出しセルのパディング（上下、左右） */
-	color: white;
-	background-color: #2B8225; /* 見出しセルの背景色 */
+	color: #ffffff;
+	background-color: #5f9ea0; /* 見出しセルの背景色 */
 	border: 1px solid white;
 	text-align: center;
-	line-height: 130%;
 	}
 	th.tbd_th_p2 {
-	width: 150px;
+	width: 200px;
 	padding: 10px 8px; /* 見出しセルのパディング（上下、左右） */
-	color: white;
-	background-color: #2B8225; /* 見出しセルの背景色 */
+	color: #ffffff;
+	background-color: #5f9ea0; /* 見出しセルの背景色 */
 	border: 1px solid white;
 	text-align: center;
 	line-height: 130%;
@@ -464,15 +464,13 @@
 	vertical-align:middle;
 	}
 	td.tbd_td_p1_c {
-	width: 200px;
-	padding: 1px 10px 1px; /* データセルのパディング（上、左右、下） */
+	padding: 3px 10px; /* データセルのパディング（上、左右、下） */
 	border: none;
 	text-align: center;
 	vertical-align:middle;
 	}
 	td.tbd_td_p1_r {
-	width: 200px;
-	padding: 1px 10px 1px; /* データセルのパディング（上、左右、下） */
+	padding: 3px 10px; /* データセルのパディング（上、左右、下） */
 	border: none;
 	text-align: right;
 	vertical-align:middle;
@@ -657,6 +655,29 @@
 				});
 			}
 		}
+		//発送完了メール一括送信ボタン
+		function Push_Send_all(month){
+			if(window.confirm(month + "月の発送完了メールを一括で送信します")){
+				//値をPHPに受け渡す
+				$.ajax({
+				type: "POST", //　GETでも可
+				url: "./rice_mail_slip_reply_all.php", //　送り先
+				data: { 
+				month: month
+				 }, //　渡したいデータをオブジェクトで渡す
+				dataType : "json", //　データ形式を指定
+				scriptCharset: 'utf-8' //　文字コードを指定
+				})
+				.then(
+				function(mail_result){　 //　paramに処理後のデータが入って戻ってくる
+				alert("　結果：" + mail_result[1]);
+				console.log('resister', "対象月：" + mail_result[0] + "　結果：" + mail_result[1]);
+				},
+				function(XMLHttpRequest, textStatus, errorThrown){
+				console.log(errorThrown); //　エラー表示
+				});
+			}
+		}
 	</script>
 	<style type="text/css">
 		.btn-circle-border-simple {
@@ -802,6 +823,19 @@
 	color: white;
 	}
 	</style>
+	<script type="text/javascript">
+		document.addEventListener("DOMContentLoaded", () => {
+		  const btn = document.getElementById("copyBtn");
+		  btn.addEventListener("click", () => {
+		    const text = document.getElementById("textToCopy").textContent;
+		    text.trim();
+			    navigator.clipboard.writeText(text).then(() => {
+			        btn.textContent = "Done";
+			        setTimeout(() => btn.textContent = "Copy", 1000);
+			    });
+		    });
+		});
+	</script>
 </head>
 
 <body>
@@ -890,7 +924,126 @@
 							<!--ここまで-->
 						</p>
 						<!-- 個別表示 -->
-						<h2>集計データ</h2>
+						<h2>集計データ</h2><br>
+						<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
+							<tr>
+								<th class="tbd_th_p2" >コース</th>
+								<th class="tbd_th_p1" >量</th>
+								<th class="tbd_th_p1" >合計<br>(件)</th>
+								<th class="tbd_th_p1" >初回<br>(件)</th>
+								<th class="tbd_th_p1" >2~11回目<br>(件)</th>
+								<th class="tbd_th_p1" >最終回<br>(件)</th>
+								<th class="tbd_th_p1" >必要量<br>(kg)</th>
+							</tr>
+							<?php
+							$comm->ouputlog("☆★☆処理開始☆★☆ ", $prgid, SYS_LOG_TYPE_INFO);
+							// ================================================
+							// ■　□　■　□　個別表示　■　□　■　□
+							// ================================================
+							//----- データ抽出
+							$query = "SELECT 
+								  A.category
+								 , A.weight
+								, SUM(CASE WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 1 ELSE 0 END) as first_num
+								, SUM(CASE WHEN CONCAT(YEAR(B.date_s),MONTH(B.date_s))<>CONCAT(YEAR(A.delivery_date),MONTH(A.delivery_date)) AND CONCAT(YEAR(B.date_e),MONTH(B.date_e))<>CONCAT(YEAR(A.delivery_date),MONTH(A.delivery_date)) THEN 1 ELSE 0 END) as second_num
+								, SUM(CASE WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 1 ELSE 0 END) as last_num
+								, COUNT(*) AS total_num
+								 FROM php_rice_shipment A 
+								 LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum  
+								 LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum  WHERE A.stopflg = 0 
+								 AND (A.delflg = 0 OR A.slipnumber<>'') 
+								 AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')
+								 GROUP BY A.category, A.weight
+								 ORDER BY A.category, A.weight ";
+							$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+							$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+							if (! $rs = $db->query($query)) {
+								$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+							}
+							$i = 0;
+							$total_weight = 0;
+							$total_num = 0;
+							$first_num = 0;
+							$second_num = 0;
+							$last_num = 0;
+							$g_category = "";
+							$category_weight = 0;
+							$copy_data = "";
+							while ($row = $rs->fetch_array()) {
+								if($g_category <> $row['category'] && $g_category <> ""){ ?>
+									<tr style="background-color:d3d3d3;">
+										<td class="tbd_td_p1_c"></td>
+										<td class="tbd_td_p1_c"></td>
+										<td class="tbd_td_p1_c"></td>
+										<td class="tbd_td_p1_c"></td>
+										<td class="tbd_td_p1_c"></td>
+										<td class="tbd_td_p1_c"></td>
+										<td class="tbd_td_p1_r"><strong><? echo number_format($category_weight); ?></strong></td>
+									</tr>
+									<? 
+									$copy_data .= "\n必要量　".$category_weight."kg";
+									$category_weight = 0;
+								}
+								if($g_category <> $row['category']){
+									$copy_data .= "\n\n<".$row['category'].">";
+								}
+								$copy_data .= "\n".$row['weight']."kg　".$row['total_num']."件";
+								++$i;
+								//明細設定
+								if (($i % 2) == 0) { ?>
+									<tr style="background-color:#f8f8ff;">
+								<? } else { ?>
+									<tr>
+								<? } ?>
+									<td class="tbd_td_p1_c"><? if($g_category <> $row['category']){echo $row['category'];} ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['weight']."kg"; ?></td>
+									<td class="tbd_td_p1_r"><strong><? echo $row['total_num']; ?></strong></td>
+									<td class="tbd_td_p1_r"><? echo $row['first_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['second_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['last_num']; ?></td>
+									<td class="tbd_td_p1_r"></td>
+								</tr>
+								<?
+								$first_num += $row['first_num'];
+								$second_num += $row['second_num'];
+								$last_num += $row['last_num'];
+								$total_num += $row['total_num'];
+								$total_weight += $row['total_num']*$row['weight'];
+								$category_weight += $row['total_num']*$row['weight'];
+								$g_category = $row['category'];
+							}
+							$copy_data .= "\n必要量　".$category_weight."kg";
+							$copy_data .= "\n\n<合計>";
+							$copy_data .= "\n".$total_num."件";
+							$copy_data .= "（内初回：".$first_num."件）";
+							?>
+							<tr style="background-color:d3d3d3;">
+								<td class="tbd_td_p1_c"></td>
+								<td class="tbd_td_p1_c"></td>
+								<td class="tbd_td_p1_c"></td>
+								<td class="tbd_td_p1_c"></td>
+								<td class="tbd_td_p1_c"></td>
+								<td class="tbd_td_p1_c"></td>
+								<td class="tbd_td_p1_r"><strong><? echo number_format($category_weight); ?></strong></td>
+							</tr>
+							<tr style="background-color:a9a9a9; color:white; font-weight:bold;">
+								<th class="tbd_td_p1_c" COLSPAN="2">合計</th>
+								<td class="tbd_td_p1_r"><? echo $total_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $first_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $second_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $last_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $total_weight; ?></td>
+							</tr>
+						</table><div id="textToCopy" style="display:none">
+<?php
+echo "おつかれさまです。\n".(int)$p_month."月分締め切りましたので、件数を報告いたします。\n伝票は奥田さんにお渡しいたします。\nよろしくお願いいたします。\n\n＝＝＝＝＝＝＝＝＝＝\n";
+echo (int)$p_month."月発送分";
+echo $copy_data;
+?>
+</div>
+<? if($p_staff == "田村"){ ?>
+						<button type="button" id="copyBtn">Copy</button><br><br>
+<? } ?>
 						<table class="tbt" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 							<tr>
 								<th class="tbd_th_p2" ></th>
@@ -914,12 +1067,19 @@
 								 WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' 
 								 ELSE '2回目以降' END as title
 								,COUNT(*) AS total_num  -- 全件数
+								,SUM(A.weight) AS total_weight  -- 全件数
 								,SUM(CASE WHEN A.output_flg = 0 THEN 1 ELSE 0 END) AS yet_num
 								,SUM(CASE WHEN A.output_flg = 3 THEN 1 ELSE 0 END) AS error_num
-								,SUM(CASE WHEN A.output_flg = 9 AND A.ship_date = '0000-00-00' THEN 1 ELSE 0 END) AS slip_num
-								,SUM(CASE WHEN A.output_flg = 9 AND A.ship_date <> '0000-00-00'AND A.receive_date = '0000-00-00' THEN 1 ELSE 0 END) AS delivery_num
+								,SUM(CASE WHEN A.output_flg = 9 AND A.ship_date = '0000-00-00' AND A.delflg=0 THEN 1 ELSE 0 END) AS slip_num
+								,SUM(CASE WHEN A.output_flg = 9 AND A.ship_date <> '0000-00-00'AND A.receive_date = '0000-00-00' AND A.delflg=0 THEN 1 ELSE 0 END) AS delivery_num
 								,SUM(CASE WHEN A.delflg = 1 THEN 1 ELSE 0 END) AS cancel_num
-								,SUM(CASE WHEN A.output_flg = 9 AND A.receive_date <> '0000-00-00' THEN 1 ELSE 0 END) AS done_num
+								,SUM(CASE WHEN A.output_flg = 9 AND A.receive_date <> '0000-00-00' AND A.delflg=0 THEN 1 ELSE 0 END) AS done_num
+								,SUM(CASE WHEN A.output_flg = 0 THEN A.weight ELSE 0 END) AS yet_weight
+								,SUM(CASE WHEN A.output_flg = 3 THEN A.weight ELSE 0 END) AS error_weight
+								,SUM(CASE WHEN A.output_flg = 9 AND A.ship_date = '0000-00-00' AND A.delflg=0 THEN A.weight ELSE 0 END) AS slip_weight
+								,SUM(CASE WHEN A.output_flg = 9 AND A.ship_date <> '0000-00-00' AND A.receive_date = '0000-00-00' AND A.delflg=0 THEN A.weight ELSE 0 END) AS delivery_weight
+								,SUM(CASE WHEN A.delflg = 1 THEN A.weight ELSE 0 END) AS cancel_weight
+								,SUM(CASE WHEN A.output_flg = 9 AND A.receive_date <> '0000-00-00' AND A.delflg=0 THEN A.weight ELSE 0 END) AS done_weight
 								 FROM php_rice_shipment A 
 								 LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum  
 								 LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum  WHERE A.stopflg = 0 
@@ -951,18 +1111,18 @@
 								++$i;
 								//明細設定
 								if (($i % 2) == 0) { ?>
-									<tr style="background-color:#EDEDED;">
+									<tr style="background-color:#f8f8ff;">
 								<? } else { ?>
 									<tr>
 								<? } ?>
 									<th class="tbd_td_p1_c" ><? echo $row['title']; ?></th>
-									<td class="tbd_td_p1_r"><? echo $row['total_num']; ?></td>
-									<td class="tbd_td_p1_r"><? echo $row['yet_num']; ?></td>
-									<td class="tbd_td_p1_r"><? echo $row['error_num']; ?></td>
-									<td class="tbd_td_p1_r"><? echo $row['slip_num']; ?></td>
-									<td class="tbd_td_p1_r"><? echo $row['delivery_num']; ?></td>
-									<td class="tbd_td_p1_r"><? echo $row['cancel_num']; ?></td>
-									<td class="tbd_td_p1_r"><? echo $row['done_num']; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['total_num']."件（".$row['total_weight']."kg）"; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['yet_num']."件（".$row['yet_weight']."kg）"; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['error_num']."件（".$row['error_weight']."kg）"; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['slip_num']."件（".$row['slip_weight']."kg）"; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['delivery_num']."件（".$row['delivery_weight']."kg）"; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['cancel_num']."件（".$row['cancel_weight']."kg）"; ?></td>
+									<td class="tbd_td_p1_r"><? echo $row['done_num']."件（".$row['done_weight']."kg）"; ?></td>
 								</tr>
 								<?
 								$total_num += $row['total_num'];
@@ -972,16 +1132,23 @@
 								$delivery_num += $row['delivery_num'];
 								$cancel_num += $row['cancel_num'];
 								$done_num += $row['done_num'];
+								$total_weight += $row['total_weight'];
+								$yet_weight += $row['yet_weight'];
+								$error_weight += $row['error_weight'];
+								$slip_weight += $row['slip_weight'];
+								$delivery_weight += $row['delivery_weight'];
+								$cancel_weight += $row['cancel_weight'];
+								$done_weight += $row['done_weight'];
 							} ?>
-							<tr style="background-color:d3d3d3;">
+							<tr style="background-color:a9a9a9; color:white; font-weight:bold;">
 								<th class="tbd_td_p1_c" >合計</th>
-								<td class="tbd_td_p1_r"><? echo $total_num; ?></td>
-								<td class="tbd_td_p1_r"><? echo $yet_num; ?></td>
-								<td class="tbd_td_p1_r"><? echo $error_num; ?></td>
-								<td class="tbd_td_p1_r"><? echo $slip_num; ?></td>
-								<td class="tbd_td_p1_r"><? echo $delivery_num; ?></td>
-								<td class="tbd_td_p1_r"><? echo $cancel_num; ?></td>
-								<td class="tbd_td_p1_r"><? echo $done_num; ?></td>
+								<td class="tbd_td_p1_r"><? echo $total_num."件（".$total_weight."kg）"; ?></td>
+								<td class="tbd_td_p1_r"><? echo $yet_num."件（".$yet_weight."kg）"; ?></td>
+								<td class="tbd_td_p1_r"><? echo $error_num."件（".$error_weight."kg）"; ?></td>
+								<td class="tbd_td_p1_r"><? echo $slip_num."件（".$slip_weight."kg）"; ?></td>
+								<td class="tbd_td_p1_r"><? echo $delivery_num."件（".$delivery_weight."kg）"; ?></td>
+								<td class="tbd_td_p1_r"><? echo $cancel_num."件（".$cancel_weight."kg）"; ?></td>
+								<td class="tbd_td_p1_r"><? echo $done_num."件（".$done_weight."kg）"; ?></td>
 							</tr>
 						</table><br><br>
 						<!-- 個別表示 -->
@@ -1041,7 +1208,7 @@
 								if (($rowcnt % 2) == 0) { ?>
 									<tr onclick="Javascript:CheckRow(<? echo $i ?>)">
 								<? } else { ?>
-									<tr style="background-color:#EDEDED;" onclick="Javascript:CheckRow(<? echo $i ?>)">
+									<tr style="background-color:#f8f8ff;" onclick="Javascript:CheckRow(<? echo $i ?>)">
 								<? }
 								$rowcnt = $rowcnt +1; ?>
 									<td style="display:none;"><?php echo $row['subsc_idxnum']?></td>
@@ -1129,6 +1296,7 @@
 								<label class="radio-inline__label" for="d-item-4"><b>非表示</b></label>
 							</fieldset>
 							<p id="p2">
+								<p style="text-align:right;"><a href="Javascript:Push_Send_all(<?= $p_year.$p_month; ?>)" class="btn-border-b">ﾒｰﾙ一括送信</a></p>
 								<table class="tbd" cellspacing="0" cellpadding="0" border="0" summary="ベーステーブル">
 									<tr>
 										<th class="tbd_th_c" >状況</th>
