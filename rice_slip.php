@@ -287,6 +287,101 @@
 		setcookie ('downloaded', '', time()-3600);
 		setcookie ('downloaded', "yes");
 	}
+	
+	// リマインドメール送信リスト取得
+	if(isset($_POST['mail_btn'])) {
+		$comm->ouputlog("ショートメール送信リスト取得", $prgid, SYS_LOG_TYPE_INFO);
+		$p_list[] = array("# 電話番号", "基準日", "設定1", "設定2", "設定3");
+		//対象データ抽出
+		$query = " SELECT C.name, C.phonenum1, A.category, A.weight ";
+		$query .= " FROM php_rice_shipment A";
+		$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
+		$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
+		$query .= " WHERE A.stopflg = 0";
+		$query .= " AND A.delflg = 0";
+		$query .= " AND (C.phonenum1 LIKE '090%' OR C.phonenum1 LIKE '080%' OR C.phonenum1 LIKE '070%') ";
+		$query .= " AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')";
+		$query .= " GROUP BY C.name, C.phonenum1";
+		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+		if (! $rs = $db->query($query)) {
+			$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+		}
+		while ($row = $rs->fetch_array()) {
+			$p_list[] = array($row['phonenum1'], '', $row['name'], $row['category'], $row['weight']);
+		}
+		//CSVにデータを反映
+		$view = "";
+		foreach ($p_list as $val) {
+			//配列の内容を「,」区切りで連結する
+			$view .= implode(",", $val). "\r\n";
+		}
+		//BOMBを設定
+		$view = pack('C*',0xEF,0xBB,0xBF). $view;
+		//「$view」を「stores_up.csv」ファイルに書き出しする
+		file_put_contents("kddi_up.csv", $view);
+		
+		?>
+		
+		<!DOCTYPE html>
+		<html lang="ja">
+		<head><meta charset="UTF-8"></head>
+		<body>
+		<script>
+			window.open('kddi_up.csv');
+		</script>
+		</body>
+		</html>
+		<?php
+	}
+	// リマインドメール送信不可リスト取得
+	if(isset($_POST['no_mail_btn'])) {
+		$comm->ouputlog("ショートメール&Eメール送信不可リスト取得", $prgid, SYS_LOG_TYPE_INFO);
+		$p_list[] = array("# 電話番号", "基準日", "設定1", "設定2", "設定3");
+		//対象データ抽出
+		$query = " SELECT C.name, C.phonenum1, A.category, A.weight ";
+		$query .= " FROM php_rice_shipment A";
+		$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
+		$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
+		$query .= " WHERE A.stopflg = 0";
+		$query .= " AND A.delflg = 0";
+		$query .= " AND C.email = ''";
+		$query .= " AND (C.phonenum1 NOT LIKE '090%' AND C.phonenum1 NOT LIKE '080%' AND C.phonenum1 NOT LIKE '070%') ";
+		$query .= " AND A.delivery_date BETWEEN '".$p_year.$p_month."01' AND LAST_DAY('".$p_year.$p_month."01')";
+		$query .= " GROUP BY C.name, C.phonenum1";
+		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
+		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
+		if (! $rs = $db->query($query)) {
+			$comm->ouputlog("☆★☆データ追加エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
+		}
+		while ($row = $rs->fetch_array()) {
+			$p_list[] = array($row['phonenum1'], '', $row['name'], $row['category'], $row['weight']);
+		}
+		//CSVにデータを反映
+		$view = "";
+		foreach ($p_list as $val) {
+			//配列の内容を「,」区切りで連結する
+			$view .= implode(",", $val). "\r\n";
+		}
+		//BOMBを設定
+		$view = pack('C*',0xEF,0xBB,0xBF). $view;
+		//「$view」を「stores_up.csv」ファイルに書き出しする
+		file_put_contents("kddi_up.csv", $view);
+		
+		?>
+		
+		<!DOCTYPE html>
+		<html lang="ja">
+		<head><meta charset="UTF-8"></head>
+		<body>
+		<script>
+			window.open('kddi_up.csv');
+		</script>
+		</body>
+		</html>
+		<?php
+	}
+
 	$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 	$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 ?>
@@ -547,6 +642,15 @@
 				return false;
 			}
 		}
+		//二重登録防止後リスト出力
+		function MClickBtn2(action,month) {
+			if(window.confirm(month+'月リマインドメール送信用のリストを出力します。')){
+				document.forms['frm'].elements[action].click();
+				return;
+			}else{
+				return false;
+			}
+		}
 		//チェックボックス全選択
 		$(function(){
 			var checkAll = '#checkAll'; //「すべて」のチェックボックスのidを指定
@@ -658,6 +762,29 @@
 		//発送完了メール一括送信ボタン
 		function Push_Send_all(month){
 			if(window.confirm(month + "月の発送完了メールを一括で送信します")){
+				//値をPHPに受け渡す
+				$.ajax({
+				type: "POST", //　GETでも可
+				url: "./rice_mail_slip_reply_all.php", //　送り先
+				data: { 
+				month: month
+				 }, //　渡したいデータをオブジェクトで渡す
+				dataType : "json", //　データ形式を指定
+				scriptCharset: 'utf-8' //　文字コードを指定
+				})
+				.then(
+				function(mail_result){　 //　paramに処理後のデータが入って戻ってくる
+				alert("　結果：" + mail_result[1]);
+				console.log('resister', "対象月：" + mail_result[0] + "　結果：" + mail_result[1]);
+				},
+				function(XMLHttpRequest, textStatus, errorThrown){
+				console.log(errorThrown); //　エラー表示
+				});
+			}
+		}
+		//発送完了メール一括送信ボタン
+		function Push_short_mail(month){
+			if(window.confirm(month + "ショートメール送信用のリストを取得します")){
 				//値をPHPに受け渡す
 				$.ajax({
 				type: "POST", //　GETでも可
@@ -821,6 +948,30 @@
 	.btn-flat-border:hover {
 	background: #191970;
 	color: white;
+	}
+	/*--ボタンデザイン--*/
+	.btn-border {
+	display: inline-block;
+	text-align: left;
+	border: 2px solid #ff8c00;
+	font-size: 20px;
+	color: #ff8c00;
+	text-decoration: none;
+	font-weight: bold;
+	padding: 20px 20px;
+	border-radius: 4px;
+	transition: .4s;
+	background-color: #fffacd;
+	color: #0073a8;
+	}
+	.btn-border:hover,
+	.btn-border::before,
+	.btn-border::after,
+	.btn-border:hover:before,
+	.btn-border:hover:after {
+	background-color: #ffa500;
+	border-color: #ff8c00;
+	color: #FFF;
 	}
 	</style>
 	<script type="text/javascript">
@@ -1102,6 +1253,7 @@ echo $copy_data;
 							}
 							$i = 0;
 							$total_num = 0;
+							$total_weight = 0;
 							$yet_num = 0;
 							$error_num = 0;
 							$slip_num = 0;
@@ -1151,6 +1303,13 @@ echo $copy_data;
 								<td class="tbd_td_p1_r"><? echo $done_num."件（".$done_weight."kg）"; ?></td>
 							</tr>
 						</table><br><br>
+						<p style="text-align:right;">
+							<a href="javascript:MClickBtn2('no_mail_btn', '<?= $p_year.$p_month; ?>')" class="btn-border-b">ﾒｰﾙ送信不可リスト取得</a>
+							<input type="submit" name="no_mail_btn" value="ﾒｰﾙ送信不可リスト取得" style="display:none;">
+							<a href="javascript:MClickBtn2('mail_btn', '<?= $p_year.$p_month; ?>')" class="btn-border-b">ﾘﾏｲﾝﾄﾞﾒｰﾙ送信リスト取得</a>
+							<input type="submit" name="mail_btn" value="ﾘﾏｲﾝﾄﾞﾒｰﾙ送信リスト取得" style="display:none;">
+							<a href="https://frontend.portal-kmc.kddi.com/campaigns" class="btn-border" target="_blank">入稿管理ポータル</a>
+						</p>
 						<!-- 個別表示 -->
 						<?php
 						$comm->ouputlog("☆★☆処理開始☆★☆ ", $prgid, SYS_LOG_TYPE_INFO);
