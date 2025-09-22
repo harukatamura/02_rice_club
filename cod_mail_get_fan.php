@@ -395,8 +395,9 @@
 			$query .= " WHERE delflg = 0 ";
 			$query .= " AND (name = ".sprintf("'%s'", $name);
 			$query .= " OR phonenum1 = ".sprintf("'%s'", $phonenum);
-			$query .= " OR (address2 = ".sprintf("'%s'", $address2.$address3);
-			$query .= " AND address3 = ".sprintf("'%s'", $address4).")";
+			$query .= " OR (address2 = ".sprintf("'%s'", $address2);
+			$query .= " AND address3 = ".sprintf("'%s'", $address3);
+			$query .= " AND address4 = ".sprintf("'%s'", $address4).")";
 			$query .= " )";
 			$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 			$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
@@ -441,8 +442,10 @@
 			$m_query2 .= sprintf(",'%s'", $postcd2);
 			$m_query1 .= "," . $collist_p["都道府県"];
 			$m_query2 .= sprintf(",'%s'", $address1);
-			$m_query1 .= "," . $collist_p["ご住所"];
-			$m_query2 .= sprintf(",'%s'", $address2.$address3);
+			$m_query1 .= "," . $collist_p["市区町村"];
+			$m_query2 .= sprintf(",'%s'", $address2);
+			$m_query1 .= "," . $collist_p["町名番地"];
+			$m_query2 .= sprintf(",'%s'", $address3);
 			$m_query1 .= "," . $collist_p["建物名"];
 			$m_query2 .= sprintf(",'%s'", $address4);
 			$m_query1 .= "," . $collist_p["地域"];

@@ -571,7 +571,7 @@
 						//----- データ抽出
 						$query = "
 							SELECT A.name, C.category as p_category, C.weight as p_weight, F.category, F.weight, C.delivery_date, B.date_s, C.stopflg, C.output_flg, A.idxnum
-							, A.area, A.address2, A.insdt, A.sales_way, C.ship_idxnum
+							, A.area, A.address2, A.address3, A.insdt, A.sales_way, C.ship_idxnum
 							, CASE 
 								WHEN F.category <> C.category OR F.weight <> C.weight THEN 1
 								ELSE 0 
@@ -627,7 +627,7 @@
 									<td class="tbd_td_p3_c"><? echo date('y/n/j H:i', strtotime($row['insdt'])); ?></td>
 									<td class="tbd_td_p3_c"><a href="Javascript:edit_name('<?= $row['idxnum']; ?>')"><? echo $row['name']; ?></a></td>
 									<? if($p_staff == "田村"|| $p_staff == "林" || $p_staff == "島村" || $p_compcd == "A"){ ?>
-										<td class="tbd_td_p3_l"><? echo $row['address2']; ?></td>
+										<td class="tbd_td_p3_l"><? echo $row['address2'].$row['address3']; ?></td>
 									<? }else{ ?>
 										<td class="tbd_td_p3_l"><? echo $row['area']; ?></td>
 									<? } ?>

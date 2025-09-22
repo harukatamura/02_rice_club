@@ -677,6 +677,9 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					<div id="checkwait">
 						<input type="button" class="search" OnClick="window.open('./rice_mail_checklist.php')" value="確認待ちリスト"><br>
 					</div>
+					<div id="checkwait">
+						<input type="button" class="search" OnClick="window.open('./rice_mail_temp_list.php')" value="テンプレート"><br>
+					</div>
 				<? } ?>
 				<div id="search">
 					<input type="button" class="search" OnClick="Javascript:Show_Search()" value="絞り込み🔎"><br>
@@ -775,13 +778,13 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 				<?php
 					//----- データ抽出
 					$query = "";
-					$query .= " SELECT E.mail_idxnum, A.updcount, A.name, E.insdt, E.upddt, A.ruby, A.company";
+					$query .= " SELECT E.mail_idxnum, A.updcount, A.name, E.insdt, IFNULL(D.upddt, A.upddt) as upddt, A.ruby, A.company";
 					$query .= " , A.address1, A.phonenum1, A.email, E.mail_status, E.correstaf, E.urgency ";
 					$query .= " , D.category, D.contents, D.remarks, E.question";
 					$query .= " FROM php_rice_mail E";
 					$query .= " left outer join php_rice_personal_info A ON A.idxnum=E.personal_idxnum ";
 					$query .= " left outer join";
-					$query .= " (SELECT B.category, B.contents, B.detail_idxnum, B.mail_idxnum, B.remarks";
+					$query .= " (SELECT B.upddt, B.category, B.contents, B.detail_idxnum, B.mail_idxnum, B.remarks";
 					$query .= " FROM php_rice_mail_detail B";
 					$query .= " INNER JOIN(";
 					$query .= " SELECT mail_idxnum, MAX(detail_idxnum) as max_detail_idxnum";
@@ -804,20 +807,20 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					}if($search_idx <> ""){
 						$query .= " AND E.mail_idxnum = ".$search_idx;
 					}if($search_date <> 0){
-						$query .= " AND DATE(A.upddt)= '".date('Y-m-d', strtotime($search_date))."'";
+						$query .= " AND DATE(D.upddt)= '".date('Y-m-d', strtotime($search_date))."'";
 					}if($search_q_date1 <> 0){
 						$query .= " AND DATE(E.insdt)>= '".date('Y-m-d', strtotime($search_q_date1))."'";
 					}if($search_q_date2 <> 0){
 						$query .= " AND DATE(E.insdt)<= '".date('Y-m-d', strtotime($search_q_date2))."'";
 					}
 					$query .= $status;
-					$query .= " UNION ALL SELECT E.mail_idxnum, A.updcount, A.name, E.insdt, A.upddt, A.ruby, A.company";
+					$query .= " UNION ALL SELECT E.mail_idxnum, A.updcount, A.name, E.insdt, IFNULL(D.upddt, A.upddt) as upddt, A.ruby, A.company";
 					$query .= " , A.address1, A.phonenum1, A.email, E.mail_status, E.correstaf, E.urgency ";
 					$query .= " , D.category, D.contents, D.remarks, E.question";
 					$query .= " FROM php_rice_mail E";
 					$query .= " left outer join php_rice_personal_info A ON A.idxnum=E.personal_idxnum ";
 					$query .= " left outer join";
-					$query .= " (SELECT B.category, B.contents, B.detail_idxnum, B.mail_idxnum, B.remarks";
+					$query .= " (SELECT B.upddt, B.category, B.contents, B.detail_idxnum, B.mail_idxnum, B.remarks";
 					$query .= " FROM php_rice_mail_detail B";
 					$query .= " INNER JOIN(";
 					$query .= " SELECT mail_idxnum, MAX(detail_idxnum) as max_detail_idxnum";
@@ -840,7 +843,7 @@ if((!$_COOKIE['j_office_Uid']) or (!$_COOKIE['j_office_Pwd'])) {
 					}if($search_idx <> ""){
 						$query .= " AND E.mail_idxnum = ".$search_idx;
 					}if($search_date <> 0){
-						$query .= " AND DATE(A.upddt)= '".date('Y-m-d', strtotime($search_date))."'";
+						$query .= " AND DATE(D.upddt)= '".date('Y-m-d', strtotime($search_date))."'";
 					}if($search_q_date1 <> 0){
 						$query .= " AND DATE(E.insdt)>= '".date('Y-m-d', strtotime($search_q_date1))."'";
 					}if($search_q_date2 <> 0){

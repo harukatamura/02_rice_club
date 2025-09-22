@@ -294,6 +294,9 @@
 			if ($('#address2').val() != '') {
 				change_back_true('address2');
 			}
+			if ($('#address3').val() != '') {
+				change_back_true('address3');
+			}
 			// 電話番号入力フォーム監視 ハイフン・数字のみ入力可
 			$('#phonenum1').on(
 				'input', function() {
@@ -526,6 +529,11 @@
 					} else {
 						change_back_false('address2');
 					}
+					if ($('#address3').val() != '') {
+						change_back_true('address3');
+					} else {
+						change_back_false('address3');
+					}
 				}
 			);
 			$('#postcode2').on(
@@ -563,6 +571,11 @@
 					} else {
 						change_back_false('address2');
 					}
+					if ($('#address3').val() != '') {
+						change_back_true('address3');
+					} else {
+						change_back_false('address3');
+					}
 				}
 			);
 			$('#address1').on(
@@ -580,6 +593,15 @@
 						change_back_true('address2');
 					} else {
 						change_back_false('address2');
+					}
+				}
+			);
+			$('#address3').on(
+				'input', function() {
+					if ($('#address3').val() != '') {
+						change_back_true('address3');
+					} else {
+						change_back_false('address3');
 					}
 				}
 			);
@@ -657,10 +679,11 @@
 			let postcode2 = $('#postcode2').val();
 			let address1 = $('#address1').val();
 			let address2 = $('#address2').val();
+			let address3 = $('#address3').val();
 			let submit_punc = '';
 			let submit_swal = '';
 			// 必須項目未入力ならエラー表示
-			if(name == '' || phonenum1 == '' || phonenum1 == null || postcode1 == '' || postcode2 == '' || address1 == '' || address2 == '') {
+			if(name == '' || phonenum1 == '' || phonenum1 == null || postcode1 == '' || postcode2 == '' || address1 == '' || address2 == '' || address3 == '') {
 				if (name == '') {
 					submit_swal = '氏名'
 					submit_punc = '・';
@@ -673,7 +696,7 @@
 					submit_swal += submit_punc + '郵便番号'
 					submit_punc = '・';
 				}
-				if (address1 == '選択してください' || address2 == '') {
+				if (address1 == '選択してください' || address2 == '' || address3 == '') {
 					submit_swal += submit_punc + '住所'
 					submit_punc = '・';
 				}
@@ -832,10 +855,10 @@
 						$table = "php_rice_subsucription";
 						$table_p = "php_rice_personal_info";
 						$collist = $dba->mysql_get_collist($db, $table_p);
-						$arr_keylist = array("名前", "電話番号1", "電話番号2", "郵便番号１", "郵便番号２", "都道府県", "ご住所", "建物名", "メールアドレス", "伝票用備考１", "伝票用備考２");
+						$arr_keylist = array("名前", "電話番号1", "電話番号2", "郵便番号１", "郵便番号２", "都道府県", "市区町村", "町名番地", "建物名", "メールアドレス", "伝票用備考１", "伝票用備考２");
 						//データを取得
 						$query = "
-							 SELECT A.idxnum, A.name, A.address1, A.address2, A.address3, A.postcd1, A.postcd2, A.phonenum1, A.phonenum2
+							 SELECT A.idxnum, A.name, A.address1, A.address2, A.address3, A.address4, A.postcd1, A.postcd2, A.phonenum1, A.phonenum2
 							 , A.email, B.remarks, B.memo1, B.memo2, A.receipt, A.ruby, B.delflg, A.sales_way, A.introduction
 							 , B.category, B.weight, B.tanka as s_tanka, B.date_s, B.date_e
 							 FROM php_rice_subscription B
@@ -956,13 +979,14 @@
 										<div class="form-group">
 											<img src="./images/hisu.gif" alt="必須" >
 											<label>住所</label>
-											<input type="text" id="address2" class="form-control required_form" name="ご住所" value="<?php echo $row['address2'] ?>">
+											<input type="text" id="address2" class="form-control required_form" name="市区町村" value="<?php echo $row['address2'] ?>">
+											<input type="text" id="address3" class="form-control required_form" name="町名番地" value="<?php echo $row['address3'] ?>">
 										</div>
 									</div>
 									<div class="col-lg-12">
 										<div class="form-group">
 											<label>マンション名</label>
-											<input type="text" name="建物名" value="<?php echo $row['address3'] ?>" class="form-control" id="address3">
+											<input type="text" name="建物名" value="<?php echo $row['address4'] ?>" class="form-control" id="address4">
 										</div>
 									</div>
 									<!--備考-->

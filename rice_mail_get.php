@@ -162,23 +162,23 @@
 	//日付
 	$start_buf="Date: ";
 	$end_buf="+";
+	$recdate = "";
 	$b_recdate = html_cut_syutoku($html_buf,$start_buf,$end_buf,0);
 	$b_recdate = substr($b_recdate, 0, 25);
 	$recdate = date("Y-m-d H:i:s",strtotime($b_recdate));
+	if($recdate == ""){
+		$recdate = date('YmdHis');
+	}
 
 	//=================================================
 	//SQLに書き込み
 	//=================================================
 
-	$ngword1 = "【JEMTC】ホームページお問い合わせ　※お問合せNo";
-	$ngword2 = "お問い合わせフォームから送信されました";
 	$ngword3 = "MAILER-DAEMON";
 	$ngword4 = "迷惑メール一覧通知";
 	$error_mail = "Mail System Error - Returned Mail";
 	//1通目のメール・エラー通知メールはここでは格納しない
-	if(strpos($subject, $ngword1) !== false || strpos($body, $ngword2) !== false){
-		$comm->ouputlog("1通目のメールです", $prgid, SYS_LOG_TYPE_INFO);
-	}else if(strpos($subject, $ngword4) !== false){
+	if(strpos($subject, $ngword4) !== false){
 		$comm->ouputlog("エラー通知メールです", $prgid, SYS_LOG_TYPE_INFO);
 	}else{
 		//エラーメールの場合は
@@ -191,7 +191,7 @@
 		$comm->ouputlog("charset=".$charset, $prgid, SYS_LOG_TYPE_DBUG);
 		$comm->ouputlog("encoding=".$encoding, $prgid, SYS_LOG_TYPE_DBUG);
 		//同じemailアドレスから送られてきている最新のメールのインデックスを調べる
-		$query = "SELECT name, max(idxnum) as max_idxnum FROM " . $table . " WHERE email = '".$email."'";
+		$query = "SELECT name, max(mail_idxnum) as max_idxnum FROM " . $table . " WHERE email = '".$email."'";
 		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 		if (!($rs = $db->query($query))) {
 			$comm->ouputlog("☆★☆データ取得エラー☆★☆ " . $db->errno . ": " . $db->error, $prgid, SYS_LOG_TYPE_ERR);
@@ -251,9 +251,9 @@
 
 		//データ更新
 		$_insert = "INSERT INTO " . $table_detail;
-		$_insert .= " (insdt, upddt, corredt,  mail_idx,  ";
+		$_insert .= " (insdt, upddt,  mail_idxnum,  ";
 		$_insert .= " email, name, category, subject, contents)";
-		$_insert .= " VALUE ('$recdate', '$today', '$today', '$m_idxnum', ";
+		$_insert .= " VALUE ('$recdate', '$today', '$m_idxnum', ";
 		$_insert .= " '$email', '$name', 'メール受信', '$subject', '$body' )";
 		$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 		$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);
@@ -268,8 +268,8 @@
 		$_insert = "UPDATE " . $table;
 		$_insert .= " SET upddt = '$today' ";
 		$_insert .= " , updcount = updcount + 1 ";
-		$_insert .= " , status = 3 ";
-		$_insert .= " WHERE idxnum = '$m_idxnum' ";
+		$_insert .= " , mail_status = 3 ";
+		$_insert .= " WHERE mail_idxnum = '$m_idxnum' ";
 		$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 		$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);
 		//データ追加実行

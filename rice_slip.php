@@ -109,9 +109,10 @@
 		$category_list = [];
 		$weight_list = [];
 		$sumnum_list = [];
+		$delinum = array("" => "", "初回" => "【第1回のお届け】", "最終回" => "【最後のお届け】");
 		//出力対象のデータを取得
 		$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times";
-		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.p_way, B.remarks, B.memo1, B.memo2  ";
+		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.address4, C.p_way, B.remarks, B.memo1, B.memo2  ";
 		$query .= " , CASE ";
 		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' ";
 		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' ";
@@ -125,7 +126,7 @@
 		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 0 ";
 		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 1 ";
 		$query .= "  ELSE 2 END ";
-		$query .= " , A.category, A.weight, A.memo1, C.postcd1, C.postcd2";
+		$query .= " , A.category, A.weight, B.memo1, B.remarks, C.postcd1, C.postcd2";
 		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 		if (!($rs = $db->query($query))) {
@@ -142,9 +143,9 @@
 			//佐川シートのセルに値をセット
 			$sheet->setCellValueExplicitByColumnAndRow(2, $i, $row['phonenum1'], PHPExcel_Cell_DataType::TYPE_STRING);
 			$sheet->setCellValueByColumnAndRow(3, $i, $row['postcd1']."-".$row['postcd2']);
-			$sheet->setCellValueByColumnAndRow(4, $i, $row['address1']);
-			$sheet->setCellValueByColumnAndRow(5, $i, $row['address2']);
-			$sheet->setCellValueByColumnAndRow(6, $i, $row['address3']);
+			$sheet->setCellValueByColumnAndRow(4, $i, $row['address1'].$row['address2']);
+			$sheet->setCellValueByColumnAndRow(5, $i, $row['address3']);
+			$sheet->setCellValueByColumnAndRow(6, $i, $row['address4']);
 			$sheet->setCellValueByColumnAndRow(8, $i, $row['company']);
 			$sheet->setCellValueByColumnAndRow(7, $i, $row['name']);
 			$sheet->setCellValueExplicitByColumnAndRow(14, $i, "050-5272-9665", PHPExcel_Cell_DataType::TYPE_STRING);
@@ -156,8 +157,8 @@
 			$sheet->setCellValueByColumnAndRow(21, $i, "(一社)日本電子機器補修協会");
 			$sheet->setCellValueByColumnAndRow(22, $i, "主食共同購入部");
 			$sheet->setCellValueByColumnAndRow(24, $i, "精米倶楽部");
-			$sheet->setCellValueByColumnAndRow(25, $i, $row['category']);
-			$sheet->setCellValueByColumnAndRow(26, $i, $row['weight']."kg");
+			$sheet->setCellValueByColumnAndRow(25, $i, $row['category']."　".$row['weight']."kg");
+			$sheet->setCellValueByColumnAndRow(26, $i, $delinum[$row['remarks2']]);
 			$sheet->setCellValueByColumnAndRow(27, $i, $row['memo1']);
 			$sheet->setCellValueByColumnAndRow(28, $i, $row['memo2']);
 			// 時間指定があれば該当する時間帯指定サービスを選択（指定なしの場合は天地無用）・項目記入
@@ -1320,7 +1321,7 @@ echo $copy_data;
 						// ================================================
 						//----- データ抽出
 						$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times, A.output_flg";
-						$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, B.remarks, B.subsc_idxnum ";
+						$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.address4, B.remarks, B.subsc_idxnum ";
 						$query .= " , CASE ";
 						$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' ";
 						$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' ";
@@ -1410,7 +1411,7 @@ echo $copy_data;
 						// ================================================
 						//----- データ抽出
 						$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times, A.output_flg, A.slipnumber, A.mail_date, A.mail_flg, C.email";
-						$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, B.remarks, B.subsc_idxnum, A.ship_date, A.receive_date ";
+						$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.address4, B.remarks, B.subsc_idxnum, A.ship_date, A.receive_date ";
 						$query .= " , CASE ";
 						$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' ";
 						$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' ";

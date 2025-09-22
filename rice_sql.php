@@ -195,7 +195,7 @@ function mysql_rice_update($db) {
 	$collist_p = $dba->mysql_get_collist($db, $table_p);
 	$collist_s = $dba->mysql_get_collist($db, $table_s);
 	$collist_y = $dba->mysql_get_collist($db, $table_y);
-	$arrkey_p = array("名前","電話番号1","電話番号2","郵便番号１","郵便番号２","都道府県","ご住所","建物名", "メールアドレス");
+	$arrkey_p = array("名前","電話番号1","電話番号2","郵便番号１","郵便番号２","都道府県","市区町村","町名番地","建物名", "メールアドレス");
 	$arrkey_s = array("注文時備考","伝票用備考１","伝票用備考２");
 	$arrkey_y = array("コース","量","金額","伝票番号","配送日","到着指定時間帯");
 	//共通項目
