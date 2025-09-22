@@ -832,11 +832,11 @@
 						$table = "php_rice_subsucription";
 						$table_p = "php_rice_personal_info";
 						$collist = $dba->mysql_get_collist($db, $table_p);
-						$arr_keylist = array("名前", "電話番号1", "電話番号2", "郵便番号１", "郵便番号２", "都道府県", "ご住所", "建物名", "メールアドレス");
+						$arr_keylist = array("名前", "電話番号1", "電話番号2", "郵便番号１", "郵便番号２", "都道府県", "ご住所", "建物名", "メールアドレス", "伝票用備考１", "伝票用備考２");
 						//データを取得
 						$query = "
 							 SELECT A.idxnum, A.name, A.address1, A.address2, A.address3, A.postcd1, A.postcd2, A.phonenum1, A.phonenum2
-							 , A.email, B.remarks, A.receipt, A.ruby, B.delflg, A.sales_way, A.introduction
+							 , A.email, B.remarks, B.memo1, B.memo2, A.receipt, A.ruby, B.delflg, A.sales_way, A.introduction
 							 , B.category, B.weight, B.tanka as s_tanka, B.date_s, B.date_e
 							 FROM php_rice_subscription B
 							 LEFT OUTER JOIN php_rice_personal_info A ON A.idxnum=B.personal_idxnum 
@@ -970,6 +970,14 @@
 										<div class="form-group">
 											<label>備考（その他希望内容）</label>
 											<textarea name="注文時備考" rows="3" cols="70" class="form-control"><?php echo $row['remarks'] ?></textarea>
+										</div>
+									</div>
+									<!--備考-->
+									<div class="col-lg-12">
+										<div class="form-group">
+											<label>伝票記載内容用(各16文字以内)</label>
+											<input type="text" name="伝票用備考１" value="<?php echo $row['memo1'] ?>"  maxlength="16" class="form-control">
+											<input type="text" name="伝票用備考２" value="<?php echo $row['memo2'] ?>" maxlength="16" class="form-control">
 										</div>
 									</div>
 									<!--元データ-->

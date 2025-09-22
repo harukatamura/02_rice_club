@@ -111,7 +111,7 @@
 		$sumnum_list = [];
 		//出力対象のデータを取得
 		$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times";
-		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.p_way, B.remarks ";
+		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.p_way, B.remarks, B.memo1, B.memo2  ";
 		$query .= " , CASE ";
 		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' ";
 		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' ";
@@ -125,7 +125,7 @@
 		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 0 ";
 		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 1 ";
 		$query .= "  ELSE 2 END ";
-		$query .= " , A.category, A.weight, C.postcd1, C.postcd2";
+		$query .= " , A.category, A.weight, A.memo1, C.postcd1, C.postcd2";
 		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 		if (!($rs = $db->query($query))) {
@@ -158,6 +158,8 @@
 			$sheet->setCellValueByColumnAndRow(24, $i, "精米倶楽部");
 			$sheet->setCellValueByColumnAndRow(25, $i, $row['category']);
 			$sheet->setCellValueByColumnAndRow(26, $i, $row['weight']."kg");
+			$sheet->setCellValueByColumnAndRow(27, $i, $row['memo1']);
+			$sheet->setCellValueByColumnAndRow(28, $i, $row['memo2']);
 			// 時間指定があれば該当する時間帯指定サービスを選択（指定なしの場合は天地無用）・項目記入
 			$sheet->setCellValueByColumnAndRow(44, $i, date('Ymd',strtotime($row['delivery_date'])));
 			$sheet->setCellValueExplicitByColumnAndRow(45, $i, $time_list[$row['specified_times']]);

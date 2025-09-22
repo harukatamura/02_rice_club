@@ -22,6 +22,10 @@
 	$comm = new comm();
 	$dba = new dbaccess();
 
+	//実行プログラム名取得
+	$prgid = str_replace(".php","",basename($_SERVER['PHP_SELF']));
+	$prgname = "既存通販データ取得";
+
 	//スパム防止のためのリファラチェック
 	$Referer_check = 0;
 	//リファラチェックを「する」場合のドメイン
@@ -286,7 +290,7 @@
 
 	//連絡事項など
 	$start_buf="■連絡事項など";
-	$next_item="[フォーム情報]";
+	$next_item="■個人情報保護方針";
 	//取得値初期化
 	$value = "";
 	for($i=0; $i<count($bodylist);$i++){
@@ -372,7 +376,7 @@
 			$g_time = html_cut_syutoku($body, $start_buf, $end_buf,0);
 			$g_time = trim($g_time)."時";
 			$start_buf="■連絡事項など";
-			$end_buf="[フォーム情報]";
+			$end_buf="■個人情報保護方針";
 			$remarks = html_cut_syutoku($body, $start_buf, $end_buf,0);
 			//開始日取得　15日まで→当月開始、16日以降→翌月開始
 			if(date('j',strtotime($today)) < 16){
@@ -706,9 +710,9 @@
 					//デスクトップPCの場合、それぞれ格納
 					for($i=0; $i<$g_buynum; ++$i){
 						$_insert = "INSERT php_telorder__ ";
-						$_insert .= " ( insdt, upddt, status, output_flg, buynum, category, receptionday, cash, name, ruby, phonenum1, postcd1, postcd2, address1, address2, address3, mailaddress, sales_name, locale, staff, p_way, modelnum, specified_times,order_num, option_han, reception_telnum)";
+						$_insert .= " ( insdt, upddt, status, output_flg, buynum, category, receptionday, cash, name, ruby, phonenum1, postcd1, postcd2, address1, address2, address3, mailaddress, sales_name, locale, staff, p_way, modelnum, specified_times,order_num, option_han, reception_telnum, remark)";
 						$_insert .= " VALUES ";
-						$_insert .= "  ('$today', '$today', ".$status.", ".$output_flg.", '1', '".$category."', '$recdate', ".$g_cash/$g_buynum.", '$name', '$ruby', '$phonenum', '$postcd1', '$postcd2', '$address1', '".$address2.$address3."', '$address4', '$email', '100001', 'ネット通販', 'NS', '2', '".$modelnum."','".$timelist[$specified_times]."', '".$formid.$order_num."','".$option_han."', '既存')";
+						$_insert .= "  ('$today', '$today', ".$status.", ".$output_flg.", '1', '".$category."', '$recdate', ".$g_cash/$g_buynum.", '$name', '$ruby', '$phonenum', '$postcd1', '$postcd2', '$address1', '".$address2.$address3."', '$address4', '$email', '100001', 'ネット通販', 'NS', '2', '".$modelnum."','".$timelist[$specified_times]."', '".$formid.$order_num."','".$option_han."', '既存', '$remark')";
 						$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 						$comm->ouputlog($_insert, $prgid, SYS_LOG_TYPE_DBUG);
 						//データ追加実行

@@ -196,7 +196,7 @@ function mysql_rice_update($db) {
 	$collist_s = $dba->mysql_get_collist($db, $table_s);
 	$collist_y = $dba->mysql_get_collist($db, $table_y);
 	$arrkey_p = array("名前","電話番号1","電話番号2","郵便番号１","郵便番号２","都道府県","ご住所","建物名", "メールアドレス");
-	$arrkey_s = array("注文時備考");
+	$arrkey_s = array("注文時備考","伝票用備考１","伝票用備考２");
 	$arrkey_y = array("コース","量","金額","伝票番号","配送日","到着指定時間帯");
 	//共通項目
 	$query_p = "UPDATE ".$table_p;
@@ -329,6 +329,7 @@ function mysql_rice_cancel($db) {
 	$_update .= " ,C.updstaff = '".$p_staff."'";
 	$_update .= " ,C.delflg = '1' ";
 	$_update .= " WHERE A.idxnum ='".$g_idx."'";
+	$_update .= " AND C.output_flg = 0 ";
 	$comm->ouputlog("===データ更新ＳＱＬ===", $prgid, SYS_LOG_TYPE_DBUG);
 	$comm->ouputlog($_update, $prgid, SYS_LOG_TYPE_DBUG);
 	//データ追加実行
