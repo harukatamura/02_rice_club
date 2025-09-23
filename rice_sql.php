@@ -324,6 +324,9 @@ function mysql_rice_cancel($db) {
 	$_update .= " ,B.updcount = B.updcount + 1";
 	$_update .= " ,B.updstaff = '".$p_staff."'";
 	$_update .= " ,B.delflg = '1' ";
+	$_update .= " ,B.candt = '".$today."'";
+	$_update .= " ,B.canstaff = '".$p_staff."'";
+//	$_update .= " ,B.canreason = '' ";
 	$_update .= " ,C.upddt = '".$today."'";
 	$_update .= " ,C.updcount = C.updcount + 1";
 	$_update .= " ,C.updstaff = '".$p_staff."'";

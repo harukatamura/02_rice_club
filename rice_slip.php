@@ -106,13 +106,14 @@
 		$g_remarks2 = "";
 		$g_cash = 0;
 		$allnum = 0;
+		$g_cnt = 100;
 		$category_list = [];
 		$weight_list = [];
 		$sumnum_list = [];
 		$delinum = array("" => "", "初回" => "【第1回のお届け】", "最終回" => "【最後のお届け】");
 		//出力対象のデータを取得
-		$query = "SELECT A.ship_idxnum, A.tanka, A.category, A.weight, A.delivery_date, A.specified_times";
-		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.address4, C.p_way, B.remarks, B.memo1, B.memo2  ";
+		$query = "SELECT GROUP_CONCAT(A.ship_idxnum) as ship_idxnum, SUM(A.tanka) AS tanka, GROUP_CONCAT(A.category) AS category, GROUP_CONCAT(A.weight) as weight ,GROUP_CONCAT(CONCAT(A.category,' ', A.weight,'kg')) as category_weight, A.delivery_date, A.specified_times";
+		$query .= " ,C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.address4, C.p_way, GROUP_CONCAT(B.remarks SEPARATOR '') as remarks, B.memo1, B.memo2, COUNT(*) as cnt  ";
 		$query .= " , CASE ";
 		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN '初回' ";
 		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN '最終回' ";
@@ -121,12 +122,14 @@
 		$query .= " LEFT OUTER JOIN php_rice_subscription B ON A.subsc_idxnum=B.subsc_idxnum ";
 		$query .= " LEFT OUTER JOIN php_rice_personal_info C ON B.personal_idxnum=C.idxnum ";
 		$query .= " WHERE A.output_flg = 3 AND A.stopflg = 0 AND A.delflg = 0";
-		$query .= " ORDER BY  ";
+		$query .= " GROUP BY C.name, C.company, C.phonenum1, C.postcd1, C.postcd2, C.address1, C.address2, C.address3, C.address4 ";
+		$query .= " ORDER BY COUNT(*) DESC , ";
 		$query .= " CASE ";
-		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 0 ";
-		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 1 ";
-		$query .= "  ELSE 2 END ";
-		$query .= " , A.category, A.weight, B.memo1, B.remarks, C.postcd1, C.postcd2";
+		$query .= "  WHEN COUNT(*) > 1 THEN 0 ";
+		$query .= "  WHEN YEAR(B.date_s)=YEAR(A.delivery_date) AND MONTH(B.date_s)=MONTH(A.delivery_date) THEN 1 ";
+		$query .= "  WHEN YEAR(B.date_e)=YEAR(A.delivery_date) AND MONTH(B.date_e)=MONTH(A.delivery_date) THEN 2 ";
+		$query .= "  ELSE 3 END ";
+		$query .= " , A.category, A.weight, B.memo1, B.remarks, A.specified_times, C.postcd1, C.postcd2";
 		$comm->ouputlog("データ抽出 実行", $prgid, SYS_LOG_TYPE_INFO);
 		$comm->ouputlog($query, $prgid, SYS_LOG_TYPE_DBUG);
 		if (!($rs = $db->query($query))) {
@@ -157,7 +160,7 @@
 			$sheet->setCellValueByColumnAndRow(21, $i, "(一社)日本電子機器補修協会");
 			$sheet->setCellValueByColumnAndRow(22, $i, "主食共同購入部");
 			$sheet->setCellValueByColumnAndRow(24, $i, "精米倶楽部");
-			$sheet->setCellValueByColumnAndRow(25, $i, $row['category']."　".$row['weight']."kg");
+			$sheet->setCellValueByColumnAndRow(25, $i, $row['category_weight']);
 			$sheet->setCellValueByColumnAndRow(26, $i, $delinum[$row['remarks2']]);
 			$sheet->setCellValueByColumnAndRow(27, $i, $row['memo1']);
 			$sheet->setCellValueByColumnAndRow(28, $i, $row['memo2']);
@@ -191,20 +194,37 @@
 			$chksheet->setCellValueByColumnAndRow(6, $j, $row['tanka']);
 			$chksheet->setCellValueByColumnAndRow(7, $j, date('Y/n/j', strtotime($row['delivery_date'])));
 			$chksheet->setCellValueByColumnAndRow(8, $j, $row['remarks']);
-			//カテゴリーが変われば改ページ挿入
-			if(($g_category <> $row['category'] || $row['weight'] <> $g_weight || $g_remarks2 <> $row['remarks2']) && $j > 4){
-				$chksheet->setBreak('A'.$j2, PHPExcel_Worksheet::BREAK_ROW);
+			//複数購入の場合
+			if($$row['cnt'] > 1){
+				$arr_temp_category = explode(",", $row['category']);
+				$arr_temp_weight = explode(",", $row['weight']);
+				$a = 0;
+				foreach($arr_temp_category as $val){
+					if($g_remarks2 <> $row['remarks2'] || $g_category <> $val){
+						$category_list[$row['remarks2']][] = $val;
+					}if($g_remarks2 <> $row['remarks2'] || $g_category <> $val || $g_weight <> $arr_temp_weight[$a]){
+						$weight_list[$row['remarks2']][$val][] = $arr_temp_weight[$a];
+					}
+					$sumnum_list[$row['remarks2']][$val][$arr_temp_weight[$a]] = $sumnum_list[$row['remarks2']][$val][$arr_temp_weight[$a]] + 1;
+					++$a;
+				}
+			}else
+				//カテゴリーが変われば改ページ挿入
+				if(($g_category <> $row['category'] || $row['weight'] <> $g_weight || $g_remarks2 <> $row['remarks2']) && $j > 4){
+					$chksheet->setBreak('A'.$j2, PHPExcel_Worksheet::BREAK_ROW);
+				}
+				if($g_remarks2 <> $row['remarks2'] || $g_category <> $row['category']){
+					$category_list[$row['remarks2']][] = $row['category'];
+				}if($g_remarks2 <> $row['remarks2'] || $g_category <> $row['category'] || $g_weight <> $row['weight']){
+					$weight_list[$row['remarks2']][$row['category']][] = $row['weight'];
+				}
+				$sumnum_list[$row['remarks2']][$row['category']][$row['weight']] = $sumnum_list[$row['remarks2']][$row['category']][$row['weight']] + 1;
 			}
-			if($g_remarks2 <> $row['remarks2'] || $g_category <> $row['category']){
-				$category_list[$row['remarks2']][] = $row['category'];
-			}if($g_remarks2 <> $row['remarks2'] || $g_category <> $row['category'] || $g_weight <> $row['weight']){
-				$weight_list[$row['remarks2']][$row['category']][] = $row['weight'];
-			}
-			$sumnum_list[$row['remarks2']][$row['category']][$row['weight']] = $sumnum_list[$row['remarks2']][$row['category']][$row['weight']] + 1;
-			$sumnum_list[$row['remarks2']][0][0] = $sumnum_list[$row['remarks2']][0][0] + 1;
+			$sumnum_list[$row['remarks2']][0][0] = $sumnum_list[$row['remarks2']][0][0] + $row['cnt'];
 			$g_category = $row['category'];
 			$g_weight = $row['weight'];
 			$g_remarks2 = $row['remarks2'];
+			$g_cnt = $row['cnt'];
 			$allnum += 1;
 		}
 		//罫線をつける
